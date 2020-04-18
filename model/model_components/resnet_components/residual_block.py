@@ -15,16 +15,25 @@ class ResidualBlock(torch.nn.Module):
         super(ResidualBlock, self).__init__()
         self.conv1 = self._conv2d(config)
         self.conv2 = self._conv2d(config)
-        self.bn1 = nn.BatchNorm2d()
-        self.bn2 = nn.BatchNorm2d()
-        self.relu1 = nn.ReLU()
-        self.relu2 = nn.ReLU()
+        self.bn1 = nn.BatchNorm2d(config['in_channel'])
+        self.bn2 = nn.BatchNorm2d(config['out_channel'])
+        self.relu = nn.ReLU()
     
     def forward(
         self, 
         x
     ):
-        skip = 
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+
+        out = self.conv2(out)
+        out = self.bn2(out)
+        
+        out += x
+        out = self.relu(out)
+
+        return out
 
 
     def _conv2d(
@@ -40,10 +49,4 @@ class ResidualBlock(torch.nn.Module):
             bias = config["bias"],
             padding_mode=config["padding_mode"]
         )
-    
-    def _downsample(
-        self,
-        config
-    ):
-        re
 
