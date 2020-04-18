@@ -36,14 +36,14 @@ class ResidualBlock(torch.nn.Module):
             padding=padding
         )
 
-        self.bn1 = nn.BatchNorm2d(in_channel)
-        self.bn2 = nn.BatchNorm2d(out_channel)
+        self.bn1 = nn.BatchNorm2d(in_channels)
+        self.bn2 = nn.BatchNorm2d(out_channels)
         self.relu = nn.ReLU()
 
         if self.downsample:
             self.downsample_block = nn.Conv2d(
-                in_channels=out_channel,
-                out_channels=out_channel,
+                in_channels=out_channels,
+                out_channels=out_channels,
                 kernel_size=kernel_size,
                 stride=stride * 2,
                 padding=1
