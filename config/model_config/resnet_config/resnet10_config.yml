@@ -1,3 +1,11 @@
-layers: {
-  1: 
+config_map: {
+  1: {
+
+  },
+  2: {},
+  3: {}
+}
+
+layer_map: {
+  
 }

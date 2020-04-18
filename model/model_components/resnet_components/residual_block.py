@@ -10,14 +10,44 @@ import torch
 class ResidualBlock(torch.nn.Module):
     def __init__(
         self, 
-        config
+        in_channels,
+        out_channels,
+        kernel_size,
+        stride,
+        padding,
+        bias = True,
+        downsample = False,
     ):
         super(ResidualBlock, self).__init__()
-        self.conv1 = self._conv2d(config)
-        self.conv2 = self._conv2d(config)
-        self.bn1 = nn.BatchNorm2d(config['in_channel'])
-        self.bn2 = nn.BatchNorm2d(config['out_channel'])
+        self.downsample = downsample
+
+        self.conv1 = nn.Conv2d(
+            in_channels=in_channels,
+            out_channels=in_channels,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding
+        )
+        self.conv2 = nn.Conv2d(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding
+        )
+
+        self.bn1 = nn.BatchNorm2d(in_channel)
+        self.bn2 = nn.BatchNorm2d(out_channel)
         self.relu = nn.ReLU()
+
+        if self.downsample:
+            self.downsample_block = nn.Conv2d(
+                in_channels=out_channel,
+                out_channels=out_channel,
+                kernel_size=kernel_size,
+                stride=stride * 2,
+                padding=1
+            )
     
     def forward(
         self, 
@@ -33,20 +63,9 @@ class ResidualBlock(torch.nn.Module):
         out += x
         out = self.relu(out)
 
+        if self.downsample:
+            out = self.downsample_block(out)
+
         return out
 
-
-    def _conv2d(
-        self, 
-        config
-    ):
-        return nn.Conv2d(
-            in_channels=config["in_channel"],
-            out_channels=config["out_channel"],
-            kernel_size=config["kernel_size"],
-            stride=config["stride"],
-            padding=config["padding"],
-            bias = config["bias"],
-            padding_mode=config["padding_mode"]
-        )
 

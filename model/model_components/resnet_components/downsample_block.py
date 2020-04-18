@@ -32,6 +32,6 @@ class DownsampleBlock(torch.nn.Module):
             kernel_size=config["kernel_size"],
             stride=config["stride"] * 2,
             padding=config["padding"],
-            bias = config["bias"],
+            bias=False
         )
 
