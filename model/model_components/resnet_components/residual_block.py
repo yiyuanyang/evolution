@@ -8,6 +8,10 @@ import torch.nn as nn
 import torch
 
 class ResidualBlock(torch.nn.Module):
+    """
+        A Residual Block
+    """
+
     def __init__(
         self, 
         in_channels,
