@@ -40,7 +40,8 @@ train_config: {
     eval_only: False,
     adjust_lr: True,
     steps: [30,60,90,120,150],
-    gamma: 0.7
+    gamma: 0.7,
+    loss: "cross_entropy"
   }
 }
 

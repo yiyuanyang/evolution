@@ -27,22 +27,32 @@ class Trainer(object):
         self.model = ResNet10Flatten(
             in_channels=self.data_config["in_channels"],
             image_size=self.data_config["image_size"],
-            num_classes=self.num_classes["num_classes"]
+            num_classes=self.data_config["num_classes"]
+        )
+        self.optim = torch.optim.Adam(
+            self.model.parameters(),
+            lr=self.train_config["learning_config"]["learning_rate"],
+            betas=(0.9,0.999)
         )
         self.load_data
+        self.logger.log_config(
+            config_name="Experiment Config",
+            config=self.experiment_preparer.get_each_config(),
+            print_to_console=True
+        )
 
     def load_data(self):
         train_dataset = CIFAR10Dataset(
             self.data_config["train_data"],
-            32
+            self.data_config["image_size"]
         )
         eval_dataset = CIFAR10Dataset(
             self.data_config["eval_data"],
-            32
+            self.data_config["image_size"]
         )
         test_dataset = CIFAR10Dataset(
             self.data_config["test_data"],
-            32
+            self.data_config["image_size"]
         )
         data_loader_params = self.data_config["data_loader_params"]
         self.train_loader = data.DataLoader(
@@ -64,17 +74,19 @@ class Trainer(object):
         steps,
         gamma
     ):
-        if epoch in steps:
-            cur_learning_rate = self.learning_rate
-            self.learning_rate *= gamma
-            for param_group in optimizer.param_groups:
-                param_group['lr'] = self.learning_rate
-                self.logger.log_learning_rate_change(
-                    epoch=epoch, 
-                    cur=cur_learning_rate, 
-                    new=self.learning_rate,
-                    print_to_console=True
-                )
+        if epoch not in steps:
+            return
+        cur_learning_rate = self.learning_rate
+        self.learning_rate *= gamma
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = self.learning_rate
+
+        self.logger.log_learning_rate_change(
+            epoch=epoch, 
+            cur=cur_learning_rate, 
+            new=self.learning_rate,
+            print_to_console=True
+        )
 
     def train(self):
         learning_config = self.train_config["learning_config"]
@@ -117,11 +129,21 @@ class Trainer(object):
             self.model.eval()
             append_message = "TEST"
 
-        pred, ground_truth, loss = [],[],[]
+        all_prediction, all_ground_truth, all_loss = [],[],[]
         for batch_index, data, ground_truth in enumerate(self.train_loader):
             data, ground_truth = data.to(self.device), ground_truth.to(self.device)
             prediction = self.model(data)
-            prediction_probability = F.softmax(prediction)
+            loss = nn.CrossEntropyLoss(prediction, ground_truth)
+            self.optim.zero_grad()
+            if phase == 0:
+                loss.backward()
+                self.optim.step()
+            prediction = prediction.data.cpu().numpy().tolist()
+            ground_truth = ground_truth.data.cpu().numpy().tolist()
+            loss = loss.data.cpu().numpy.tolist()
+            
+
+
 
 
 
