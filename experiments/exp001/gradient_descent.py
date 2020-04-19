@@ -4,8 +4,12 @@
     Date: April. 19th 2020
 """
 
-from train.exp001.experiment_preparer import ExperimentPreparer
-from train.exp001.gradient_descent import Trainer
+import sys
+
+sys.path.append("C:\\Users\\yangy\\Documents\\ComputerVision\\Projects\\code\\projects")
+
+from Evolution.train.exp001.experiment_preparer import ExperimentPreparer
+from Evolution.train.exp001.gradient_descent import Trainer
 
 Exp001Preparer = ExperimentPreparer("config\\experiment_config\\exp001\\gradient_descent.yml")
 trainer = Trainer(Exp001Preparer)
