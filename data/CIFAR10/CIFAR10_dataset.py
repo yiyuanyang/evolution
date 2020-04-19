@@ -15,13 +15,13 @@ class CIFAR10Dataset(Dataset):
         Datset for CIFAR 10
     """
 
-    def __init__(self, data_dir, batches, image_size):
-        self.data_dir = data_dir
+    def __init__(self, data_dir_list, image_size):
+        self.data_dir_list = data_dir_list
         self.image_size = image_size
         self.file_names = []
         self.data_dict = {}
-        for batch in batches:
-            cur_file_names, cur_data_dict = self._process_batch(os.path.join(data_dir, batch))
+        for data_dir in data_dir_list:
+            cur_file_names, cur_data_dict = self._process_batch(data_dir)
             self.file_names += cur_file_names
             self.data_dict.update(cur_data_dict)
         

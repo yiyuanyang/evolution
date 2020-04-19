@@ -10,19 +10,16 @@ import sys
 class Logger(object):
     def __init__(
         self, 
-        save_dir, 
-        exp_name, 
+        logger_save_dir, 
         dump_frequency = 10
     ):
         self.messages = []
         self.dump_frequency = 10
 
-        if not os.path.exists(save_dir):
+        if not os.path.exists(logger_save_dir):
             print("FATAL: Save Directory Does not Exist")
             sys.exit()
-        elif not os.path.exists(os.path.join(exp_name)):
-            os.system("touch " + exp_name)
-        self.save_dir = os.path.join(save_dir, exp_name)
+        self.logger_save_dir = logger_save_dir
 
     def fatal(self, message):
         self._log("FATAL: " + message, force_dump=True)
@@ -40,6 +37,6 @@ class Logger(object):
             self._dump()
 
     def _dump(self):
-        f = open(self.save_dir, "a")
+        f = open(self.logger_save_dir, "a")
         f.writelines(self.messages)
 

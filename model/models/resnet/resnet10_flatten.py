@@ -35,7 +35,8 @@ class ResNet10_Flatten(nn.Module):
     ):
         x = self.ResNet_Skeleton(x)
         x = self.final_layer(x)
-        x = x.view()
+        x = x.view(-1, 1)
+        return x
         
             
 
