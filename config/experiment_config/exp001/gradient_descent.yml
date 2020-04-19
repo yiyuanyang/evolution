@@ -1,26 +1,53 @@
 # Basic Info
 basic_config: {
-  experiment_name: "exp001_gradient_descent",
+  experiment_name: "exp001_arena",
   experiment_performer: "yiyuanyang",
-  experiment_date: "2020-04-16"
+  experiment_date: "2020-04-18",
 }
 
 # Data Loading
 data_config: {
-  data_directory: ""
+  data_dir: "D:\\datasets\\cifar-10",
+  train_data: [
+    "data_batch_1",
+    "data_batch_2",
+    "data_batch_3",
+    "data_batch_4"
+  ],
+  eval_data: ["data_batch_5"],
+  test_data: ["test_batch"],
+  in_channels: 1,
+  image_size: 32,
+  num_classes: 10,
+  data_loader_params: {
+    shuffle: True,
+    num_workers: 8,
+    batch_size: 10
+  }
 }
 
 # Training
-model_config: {
-  model_type: ResNet,
-  num_layers: 18,
-  kernel_size: 3,
-  stride: 1,
-  padding: 1
+train_config: {
+  model_config: {
+    model_type: "ResNet10_Flatten",
+    num_layers: 10
+  },
+  learning_config: {
+    start_epoch: 1,
+    max_epoch: 150,
+    use_existing_model: False,
+    learning_rate: 0.001,
+    eval_only: False,
+    adjust_lr: True,
+    steps: [30,60,90,120,150],
+    gamma: 0.7,
+    loss: "cross_entropy"
+  }
 }
 
-# Model Saving
+# Logger and model saving
 save_config: {
-  model_directory: "",
-  logs_directory: ""
+  save_dir: "E:\\saved_experiments\\evolution", 
+  use_logger: True,
+  dump_frequency: 10
 }
