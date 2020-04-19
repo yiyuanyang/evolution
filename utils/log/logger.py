@@ -7,6 +7,7 @@
 import os
 import sys
 import yaml
+from sklearn import metrics
 
 class Logger(object):
     def __init__(
@@ -16,11 +17,18 @@ class Logger(object):
     ):
         self.messages = []
         self.dump_frequency = 10
+        self.phase = 3
 
         if not os.path.exists(logger_save_dir):
             print("FATAL: Save Directory Does not Exist")
             sys.exit()
-        self.logger_save_dir = logger_save_dir
+        
+        self.logger_save_dir = [
+            os.path.join(logger_save_dir, "train.log",
+            os.path.join(logger_save_dir, "eval.log",
+            os.path.join(logger_save_dir, "test.log",
+            os.path.join(logger_save_dir, "initial.log")
+        ]
 
 
     # Basic helper functions
@@ -31,12 +39,32 @@ class Logger(object):
         if print_to_console:
             print(log)
 
+    def set_phase(
+        self,
+        epoch,
+        phase,
+        print_to_console
+    ):
+        """
+            Set current phase of logger
+        """
+        if len(self.messages) != 0:
+            self._dump()
+        self.phase = phase
+
+        log = "LOGGING: Starting phase " + str(phase) + " for epoch " + str(epoch)
+        self._log(
+            log=log,
+            print_to_console=print_to_console
+        )
+
+
     def _dump(self):
         """
             This saves logs to a file
         """
-        f = open(self.logger_save_dir, "a")
-        f.writelines(self.messages)
+        file = open(self.logger_save_dir[self.phase], "a")
+        file.writelines(self.messages)
 
     # Here are all the random logging functions
 
@@ -124,4 +152,139 @@ class Logger(object):
             log=log, 
             print_to_console=print_to_console
         )
+
+    def log_data(
+        self,
+        batch_index,
+        data,
+        print_to_console=True
+    ):
+        """
+            This logs the shape and value of data
+        """
+        log = ("LOGGING: Batch" + str(batch_index) +
+                " Data Shape: " + str(list(data.shape))+ 
+                " Data Value: " + str(data.cpu().numpy.tolist()))
+        
+        self._log(
+            log=log,
+            print_to_console=print_to_console
+        )
+    
+    def _log_accuracy(
+        self,
+        epoch,
+        ground_truth,
+        prediction,
+        print_to_console=True
+    ):  
+        """
+            Logs the confusion matrix
+        """
+        accuracy_score = metrics.accuracy_score(ground_truth, prediction)
+        log = ("LOGGING: Epoch " + str(epoch) + 
+                " Accuracy Score: " + str(accuracy_score))
+        
+        self._log(
+            log=log,
+            print_to_console=print_to_console
+        )
+
+    def _log_f1(
+        self,
+        epoch,
+        ground_truth,
+        prediction,
+        print_to_console=True
+    ):  
+        """
+            Logs the confusion matrix
+        """
+        accuracy_score = metrics.f1_score(ground_truth, prediction)
+        log = ("LOGGING: Epoch " + str(epoch) + 
+                " f1 Score: " + str(accuracy_score))
+        
+        self._log(
+            log=log,
+            print_to_console=print_to_console
+        )
+
+    def _log_recall(
+        self,
+        epoch,
+        ground_truth,
+        prediction,
+        print_to_console=True
+    ):  
+        """
+            Logs the confusion matrix
+        """
+        accuracy_score = metrics.recall_score(ground_truth, prediction)
+        log = ("LOGGING: Epoch " + str(epoch) + 
+                " recall Score: " + str(accuracy_score))
+        
+        self._log(
+            log=log,
+            print_to_console=print_to_console
+        )
+
+    def _log_precision(
+        self,
+        epoch,
+        ground_truth,
+        prediction,
+        print_to_console=True
+    ):  
+        """
+            Logs the confusion matrix
+        """
+        accuracy_score = metrics.precision_score(ground_truth, prediction)
+        log = ("LOGGING: Epoch " + str(epoch) + 
+                " precision Score: " + str(accuracy_score))
+        
+        self._log(
+            log=log,
+            print_to_console=print_to_console
+        )
+
+    def _log_confusion_matrix(
+        self,
+        epoch,
+        ground_truth,
+        prediction,
+        print_to_console=True
+    ):  
+        """
+            Logs the confusion matrix
+        """
+        confusion_matrix = metrics.confusion_matrix(
+            ground_truth,
+            prediction
+        )
+        log = ("LOGGING: Epoch " + str(epoch) + 
+                "\n Confusion Matrix: \n" + str(confusion_matrix))
+        
+        self._log(
+            log=log,
+            print_to_console=print_to_console
+        )
+
+    def log_epoch_metrics(
+        self,
+        epoch,
+        ground_truth,
+        prediction,
+        print_to_console=True
+    ):
+        """
+            Perform all metrics
+        """
+        ground_truth = [int(item) for item in ground_truth]
+        prediction = [int(item) for item in ground_truth]
+        self.log("===================EPOCH SUMMARY=====================",print_to_console)
+        self._log_accuracy(epoch,ground_truth,predictionprint_to_console)
+        self._log_recall(epoch,ground_truth,prediction,print_to_console)
+        self._log_precision(epoch,ground_truth,prediction,print_to_console)
+        self._log_f1(epoch,ground_truth,predction,print_to_console)
+        self._log_confusion_matrix(epoch,ground_truth,prediction,print_to_console)
 

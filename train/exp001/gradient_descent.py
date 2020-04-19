@@ -13,6 +13,7 @@ from tqdm import tqdm
 from model.models.resnet.resnet10_flatten import ResNet10Flatten
 from data.CIFAR10.CIFAR10_dataset import CIFAR10Dataset
 import torch.nn.functional as F
+from sklearn import metrics
 
 
 
@@ -55,17 +56,18 @@ class Trainer(object):
             self.data_config["image_size"]
         )
         data_loader_params = self.data_config["data_loader_params"]
-        self.train_loader = data.DataLoader(
+        train_loader = data.DataLoader(
             train_dataset, 
             **data_loader_params)
-        self.eval_loader = data.DataLoader(
+        eval_loader = data.DataLoader(
             eval_dataset,
             **data_loader_params
         )
-        self.test_loader = data.DataLoader(
+        test_loader = data.DataLoader(
             test_dataset,
             **data_loader_params
         )
+        self.data_loaders = [train_loader, eval_loader, test_loader]
     
     def adjust_learning_rate(
         self, 
@@ -104,11 +106,11 @@ class Trainer(object):
             if os.path.exists(cur_model_path) and learning_config["use_existing_model"]:
                 self.model.load_state_dict(torch.load(cur_model_path))
             else:
-                self.train_epoch(epoch)
+                self.epoch(epoch,0)
                 torch.save(self.model.state_dict, cur_model_path)
             if learning_config["eval_only"]:
-                self.eval_epoch(epoch)
-                self.test_epoch(epoch)
+                self.epoch(epoch,1)
+                self.epoch(epoch,2)
 
     def epoch(
         self, 
@@ -119,18 +121,42 @@ class Trainer(object):
             epoch: current epoch
             phase: 0 for training, 1 for eval, 2 for test
         """
+        phases = ["Train", "Eval", "Test"]
         if phase == 0:
             self.model.train()
-            append_message = "TRAIN"
+            self.logger.phase=0
         elif phase == 1:
             self.model.eval()
-            append_message = "EVAL"
+            self.logger.phase=1
         else:
             self.model.eval()
-            append_message = "TEST"
+            self.logger.phase=2
+        
+        self.logger.set_phase(
+            epoch, 
+            phase, 
+            print_to_console=True
+        )
 
         all_prediction, all_ground_truth, all_loss = [],[],[]
-        for batch_index, data, ground_truth in enumerate(self.train_loader):
+        for batch_index, data, ground_truth in enumerate(self.data_loaders[phase]):
+            
+            # Some Logging data to see everything is correct
+            print(
+                "{phase}, Epoch: {epoch}, Batch: {batch_index}".format(
+                    phase=phases[phase],
+                    epoch=epoch,
+                    batch_index=batch_index
+                )
+            )
+            if batch_index == 0:
+                self.logger.log_data(
+                    batch_index=batch_index,
+                    data=data,
+                    print_to_console=True
+                )
+
+            # Calculations
             data, ground_truth = data.to(self.device), ground_truth.to(self.device)
             prediction = self.model(data)
             loss = nn.CrossEntropyLoss(prediction, ground_truth)
@@ -138,10 +164,34 @@ class Trainer(object):
             if phase == 0:
                 loss.backward()
                 self.optim.step()
+            
+            # Format
             prediction = prediction.data.cpu().numpy().tolist()
             ground_truth = ground_truth.data.cpu().numpy().tolist()
-            loss = loss.data.cpu().numpy.tolist()
-            
+            loss = loss.data.cpu().numpy().tolist()
+            prediction = [pred.index(max(pred)) for pred in prediction]
+            all_prediction.append(prediction)
+            all_ground_truth.append(ground_truth)
+            all_loss.append(loss)
+
+            # Logging the results
+            self.logger.log_batch_result(
+                batch_index=batch_index,
+                prediction=prediction,
+                ground_truth=ground_truth,
+                loss=loss,
+                print_to_console=True
+            )
+        
+        # Record results from the entire epoch
+        self.logger.log_epoch_metrics(
+            epoch,
+            ground_truth,
+            prediction
+        )
+        
+
+
 
 
 

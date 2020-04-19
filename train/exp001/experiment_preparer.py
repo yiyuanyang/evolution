@@ -33,7 +33,7 @@ class ExperimentPreparer(object):
             os.path.join(
                 basic_config["save_dir"], 
                 "log",
-                basic_config["experiment_name"] + ".log"
+                basic_config["experiment_name"]
             )
         self.create_dir(save_config["logger_save_dir"])
         self.set_each_config(

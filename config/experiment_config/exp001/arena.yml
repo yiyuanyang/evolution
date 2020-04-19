@@ -47,7 +47,7 @@ train_config: {
 
 # Logger and model saving
 save_config: {
-  save_dir: "E:\\saved_experiments\\evolution\\arena\\", 
+  save_dir: "E:\\saved_experiments\\evolution", 
   use_logger: True,
   dump_frequency: 10
 }
