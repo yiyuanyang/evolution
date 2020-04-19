@@ -36,6 +36,7 @@ train_config: {
     start_epoch: 1,
     max_epoch: 150,
     use_existing_model: False,
+    adjust_learning_rate: True,
     learning_rate: 0.001,
     eval_only: False,
     adjust_lr: True,

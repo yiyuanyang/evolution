@@ -71,16 +71,16 @@ class Trainer(object):
     
     def adjust_learning_rate(
         self, 
-        optimizer, 
-        epoch, 
-        steps,
-        gamma
+        epoch
     ):
+        steps = self.train_config["learning_config"]["steps"]
+        gamma = self.train_config["learning_config"]["gamma"]
         if epoch not in steps:
+            self.logger.warning("steps for learning rate adjustment not found")
             return
         cur_learning_rate = self.learning_rate
         self.learning_rate *= gamma
-        for param_group in optimizer.param_groups:
+        for param_group in self.optim.param_groups:
             param_group['lr'] = self.learning_rate
 
         self.logger.log_learning_rate_change(
@@ -97,7 +97,9 @@ class Trainer(object):
                 learning_config["start_epoch"],
                 learning_config["max_epoch"]
             )
-        ):
+        ): 
+            if learning_config["adjust_learning_rate"]:
+                self.adjust_learning_rate(epoch)
             cur_model_name = "epoch_{}.pt".format(int(epoch))
             cur_model_path = os.path.join(
                 self.save_config["model_save_dir"],
