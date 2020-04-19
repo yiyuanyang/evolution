@@ -9,9 +9,10 @@ import torch
 import torch.nn as nn
 from torch.utils import data
 import numpy as numpy
-import tqdm
-from model.models.resnet.resnet10_flatten import ResNet10_Flatten
+from tqdm import tqdm
+from model.models.resnet.resnet10_flatten import ResNet10Flatten
 from data.CIFAR10.CIFAR10_dataset import CIFAR10Dataset
+import torch.nn.functional as F
 
 
 
@@ -23,7 +24,11 @@ class Trainer(object):
         self.basic_config, self.data_config, self.train_config, self.save_config = \
             self.experiment_preparer.get_each_config()
         self.logger = self.experiment_preparer.get_logger()
-        self.model = ResNet10_Flatten
+        self.model = ResNet10Flatten(
+            in_channels=self.data_config["in_channels"],
+            image_size=self.data_config["image_size"],
+            num_classes=self.num_classes["num_classes"]
+        )
         self.load_data
 
     def load_data(self):
@@ -52,19 +57,28 @@ class Trainer(object):
             **data_loader_params
         )
     
-    def adjust_learning_rate(self, optimizer, epoch, steps, gamma):
+    def adjust_learning_rate(
+        self, 
+        optimizer, 
+        epoch, 
+        steps,
+        gamma
+    ):
         if epoch in steps:
-            cur_lr = self.lr
-            self.lr *= gamma
+            cur_learning_rate = self.learning_rate
+            self.learning_rate *= gamma
             for param_group in optimizer.param_groups:
-                param_group['lr'] = self.lr
-                self.logger.log(
-                    "Epoch " + str(epoch) + " , adjusted learning rate from " + 
-                    str(cur_lr) + " to " + str(self.lr)
+                param_group['lr'] = self.learning_rate
+                self.logger.log_learning_rate_change(
+                    epoch=epoch, 
+                    cur=cur_learning_rate, 
+                    new=self.learning_rate,
+                    print_to_console=True
                 )
 
     def train(self):
         learning_config = self.train_config["learning_config"]
+        self.learning_rate = learning_config["learning_rate"]
         for epoch in tqdm(range(
                 learning_config["start_epoch"],
                 learning_config["max_epoch"]
@@ -91,13 +105,23 @@ class Trainer(object):
     ):
         """
             epoch: current epoch
-            phase: 0 for training others for eval or test
+            phase: 0 for training, 1 for eval, 2 for test
         """
         if phase == 0:
             self.model.train()
-        else
-        pred, target, loss = [],[],[]
-        for batch_index, data_target in enumerate(self.train_loader):
+            append_message = "TRAIN"
+        elif phase == 1:
+            self.model.eval()
+            append_message = "EVAL"
+        else:
+            self.model.eval()
+            append_message = "TEST"
+
+        pred, ground_truth, loss = [],[],[]
+        for batch_index, data, ground_truth in enumerate(self.train_loader):
+            data, ground_truth = data.to(self.device), ground_truth.to(self.device)
+            prediction = self.model(data)
+            prediction_probability = F.softmax(prediction)
 
 
 

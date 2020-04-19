@@ -40,3 +40,12 @@ class Logger(object):
         f = open(self.logger_save_dir, "a")
         f.writelines(self.messages)
 
+    # Here are all the random logging functions
+
+    def log_learning_rate_change(self, epoch, cur, new, print_to_console=True):
+        message = ("LOGGING: Epoch " + str(epoch) + " , adjusted learning rate from " + 
+            str(cur) + " to " + str(new))
+        self._log(message)
+        if print_to_console:
+            print(message)
+

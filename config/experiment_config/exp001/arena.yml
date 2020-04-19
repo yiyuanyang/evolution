@@ -16,7 +16,9 @@ data_config: {
   ],
   eval_data: ["data_batch_5"],
   test_data: ["test_batch"],
+  in_channels: 1,
   image_size: 32,
+  num_classes: 10,
   data_loader_params: {
     shuffle: True,
     num_workers: 8,
@@ -33,9 +35,12 @@ train_config: {
   learning_config: {
     start_epoch: 1,
     max_epoch: 150,
+    use_existing_model: False,
+    learning_rate: 0.001,
+    eval_only: False,
     adjust_lr: True,
-    steps: 30,
-    gamma: 0.5
+    steps: [30,60,90,120,150],
+    gamma: 0.7
   }
 }
 

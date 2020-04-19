@@ -9,7 +9,7 @@ import torch.nn as nn
 import numpy as np 
 from model.models.resnet.resnet10 import ResNet10
 
-class ResNet10_Flatten(nn.Module):
+class ResNet10Flatten(nn.Module):
     """
     My Own Implementation of the Famous ResNet
     """
