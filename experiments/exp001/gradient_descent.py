@@ -5,12 +5,27 @@
 """
 
 import sys
+import os
+import torch
 
-sys.path.append("C:\\Users\\yangy\\Documents\\ComputerVision\\Projects\\code\\projects")
+def set_up_project():
+    project_path = "C:\\Users\\yangy\\Documents\\ComputerVision\\Projects\\code\\projects"
+    config_path = "Evolution\\config\\experiment_config\\exp001\\gradient_descent.yml"
+    sys.path.append(project_path)
+    return os.path.join(project_path, config_path)
 
-from Evolution.train.exp001.experiment_preparer import ExperimentPreparer
-from Evolution.train.exp001.gradient_descent import Trainer
+def run():
+    torch.multiprocessing.freeze_support()
 
-Exp001Preparer = ExperimentPreparer("config\\experiment_config\\exp001\\gradient_descent.yml")
-trainer = Trainer(Exp001Preparer)
-trainer.train()
+def main():
+    run()
+    config_path = set_up_project()
+    from Evolution.train.exp001.experiment_preparer import ExperimentPreparer
+    from Evolution.train.exp001.gradient_descent import Trainer
+
+    Exp001Preparer = ExperimentPreparer(config_path)
+    trainer = Trainer(Exp001Preparer)
+    trainer.train()
+
+if __name__ == "__main__":
+    main()
