@@ -7,14 +7,15 @@
 import yaml
 import os
 import sys
-from utils.log.logger import Logger
+from Evolution.utils.log.logger import Logger
 
 class ExperimentPreparer(object):
     def __init__(
         self,
         config_path,
     ):
-        self.config = yaml.load(config_path)
+        with open(config_path, "r") as ymlfile:
+            self.config = yaml.load(ymlfile, Loader=yaml.FullLoader)
         self.process_config()
 
     def process_config(self):
@@ -24,14 +25,14 @@ class ExperimentPreparer(object):
         data_config = self.process_data_path(2, data_config)
         save_config["model_save_dir"] = \
             os.path.join(
-                basic_config["save_dir"], 
+                save_config["save_dir"], 
                 "model",
                 basic_config["experiment_name"]
             )
         self.create_dir(save_config["model_save_dir"])
         save_config["logger_save_dir"] = \
             os.path.join(
-                basic_config["save_dir"], 
+                save_config["save_dir"], 
                 "log",
                 basic_config["experiment_name"]
             )

@@ -6,7 +6,7 @@ April 16th 2020
 
 import torch
 import torch.nn as nn
-from model.model_components.resnet_components.residual_block import ResidualBlock
+from Evolution.model.model_components.resnet_components.residual_block import ResidualBlock
 
 class ResNet10(nn.Module):
     """

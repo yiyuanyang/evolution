@@ -8,6 +8,8 @@ import os
 import sys
 import yaml
 from sklearn import metrics
+import pandas as pd
+import numpy as np
 
 class Logger(object):
     def __init__(
@@ -24,10 +26,50 @@ class Logger(object):
             sys.exit()
         
         self.logger_save_dir = [
-            os.path.join(logger_save_dir, "train.log",
-            os.path.join(logger_save_dir, "eval.log",
-            os.path.join(logger_save_dir, "test.log",
+            os.path.join(logger_save_dir, "train.log"),
+            os.path.join(logger_save_dir, "eval.log"),
+            os.path.join(logger_save_dir, "test.log"),
             os.path.join(logger_save_dir, "initial.log")
+        ]
+        self.stat_save_dir = [
+            os.path.join(logger_save_dir, "train.csv"),
+            os.path.join(logger_save_dir, "eval.csv"),
+            os.path.join(logger_save_dir, "test.csv")
+        ]
+        self.stats = [
+            {
+                "epoch":[],
+                "global_accuracy": [],
+                "accuracy":[],
+                "global_recall":[],
+                "recall":[],
+                "global_precision":[],
+                "precision":[],
+                "global_f1":[],
+                "f1":[]
+            },
+            {
+                "epoch":[],
+                "global_accuracy": [],
+                "accuracy":[],
+                "global_recall":[],
+                "recall":[],
+                "global_precision":[],
+                "precision":[],
+                "global_f1":[],
+                "f1":[]
+            },
+            {
+                "epoch":[],
+                "global_accuracy": [],
+                "accuracy":[],
+                "global_recall":[],
+                "recall":[],
+                "global_precision":[],
+                "precision":[],
+                "global_f1":[],
+                "f1":[]
+            },
         ]
 
 
@@ -43,16 +85,17 @@ class Logger(object):
         self,
         epoch,
         phase,
-        print_to_console
+        print_to_console=True
     ):
         """
             Set current phase of logger
         """
+        phases = ["Train", "Eval", "Test"]
         if len(self.messages) != 0:
             self._dump()
         self.phase = phase
-
-        log = "LOGGING: Starting phase " + str(phase) + " for epoch " + str(epoch)
+        self.log("======================SWITCHING PHASE=========================")
+        log = "LOGGING: Starting " + phases[phase] + " phase for epoch " + str(epoch)
         self._log(
             log=log,
             print_to_console=print_to_console
@@ -137,6 +180,8 @@ class Logger(object):
     def log_batch_result(
         self, 
         batch_index,
+        total_batches,
+        prediction_prob,
         prediction,
         ground_truth,
         loss,
@@ -145,8 +190,13 @@ class Logger(object):
         """
             This logs a batch run's result
         """
-        log = ("LOGGING: Batch " + str(batch_index) + "\n Prediction:" +
-            str(prediction) + "\n Ground Truth: " + str(ground_truth) + "\n Loss: " + str(loss))
+        prediction_prob = [self.round_to_2_decimal(item) for item in prediction_prob]
+        prediction_string = [str(item) for item in prediction_prob]
+        prediction_string = "\n".join(prediction_string)
+        log = ("LOGGING: Batch " + str(batch_index) + "/" + str(total_batches) +
+            "\n Prediction Probability: \n" + prediction_string +
+            "\n Prediction:" + str(prediction) + "\n Ground Truth: " + str(ground_truth) + 
+            "\n Loss: " + str(loss))
 
         self._log(
             log=log, 
@@ -157,14 +207,15 @@ class Logger(object):
         self,
         batch_index,
         data,
+        label,
         print_to_console=True
     ):
         """
             This logs the shape and value of data
         """
-        log = ("LOGGING: Batch" + str(batch_index) +
-                " Data Shape: " + str(list(data.shape))+ 
-                " Data Value: " + str(data.cpu().numpy.tolist()))
+        log = ("LOGGING: Batch " + str(batch_index) +
+                " Data Shape: " + str(list(data.shape)) + 
+                " Label Shape: " + str(list(label.shape)))
         
         self._log(
             log=log,
@@ -181,14 +232,25 @@ class Logger(object):
         """
             Logs the confusion matrix
         """
-        accuracy_score = metrics.accuracy_score(ground_truth, prediction)
+        global_accuracy = metrics.accuracy_score(ground_truth, prediction)
+
+        accuracy_scores = []
+        for i in range(0, max(ground_truth)+1):
+            label = [element for element in ground_truth if element == i]
+            pred = [prediction[j] for j in range(len(ground_truth)) if ground_truth[j] == i]
+            accuracy_scores.append(metrics.accuracy_score(label, pred))
+        accuracy_scores = self.round_to_2_decimal(accuracy_scores)
+
         log = ("LOGGING: Epoch " + str(epoch) + 
-                " Accuracy Score: " + str(accuracy_score))
+        " Global Accuracy : " + str(global_accuracy) + 
+        "\nAccuracy Scores : " + str(accuracy_scores))
         
         self._log(
             log=log,
             print_to_console=print_to_console
         )
+
+        return round(global_accuracy,2), accuracy_scores
 
     def _log_f1(
         self,
@@ -200,14 +262,18 @@ class Logger(object):
         """
             Logs the confusion matrix
         """
-        accuracy_score = metrics.f1_score(ground_truth, prediction)
+        f1_scores = metrics.f1_score(ground_truth, prediction, average=None)
+        global_f1 = round(np.mean(f1_scores),2)
+        f1_scores = self.round_to_2_decimal(f1_scores)
         log = ("LOGGING: Epoch " + str(epoch) + 
-                " f1 Score: " + str(accuracy_score))
+                " Global F1: " + str(global_f1) +
+                "\nF1 Scores: " + str(f1_scores))
         
         self._log(
             log=log,
             print_to_console=print_to_console
         )
+        return global_f1, f1_scores
 
     def _log_recall(
         self,
@@ -219,14 +285,18 @@ class Logger(object):
         """
             Logs the confusion matrix
         """
-        accuracy_score = metrics.recall_score(ground_truth, prediction)
-        log = ("LOGGING: Epoch " + str(epoch) + 
-                " recall Score: " + str(accuracy_score))
+        recall_scores = metrics.recall_score(ground_truth, prediction, average=None)
+        global_recall = round(np.mean(recall_scores),2)
+        recall_scores = self.round_to_2_decimal(recall_scores)
+        log = ("LOGGING: Epoch " + str(epoch) +
+                " Globall Recall: " + str(global_recall) + 
+                "\nRecall Scores: " + str(recall_scores))
         
         self._log(
             log=log,
             print_to_console=print_to_console
         )
+        return global_recall, recall_scores
 
     def _log_precision(
         self,
@@ -238,14 +308,18 @@ class Logger(object):
         """
             Logs the confusion matrix
         """
-        accuracy_score = metrics.precision_score(ground_truth, prediction)
+        precision_scores = metrics.precision_score(ground_truth, prediction, average=None)
+        global_precision = np.mean(precision_scores)
+        precision_scores = self.round_to_2_decimal(precision_scores)
         log = ("LOGGING: Epoch " + str(epoch) + 
-                " precision Score: " + str(accuracy_score))
+                " Global Precision: " + str(global_precision) +
+                "\nPrecision Scores: " + str(precision_scores))
         
         self._log(
             log=log,
             print_to_console=print_to_console
         )
+        return global_precision, precision_scores
 
     def _log_confusion_matrix(
         self,
@@ -274,17 +348,39 @@ class Logger(object):
         epoch,
         ground_truth,
         prediction,
+        loss,
         print_to_console=True
     ):
         """
             Perform all metrics
         """
         ground_truth = [int(item) for item in ground_truth]
-        prediction = [int(item) for item in ground_truth]
+        prediction = [int(item) for item in prediction]
         self.log("===================EPOCH SUMMARY=====================",print_to_console)
-        self._log_accuracy(epoch,ground_truth,predictionprint_to_console)
-        self._log_recall(epoch,ground_truth,prediction,print_to_console)
-        self._log_precision(epoch,ground_truth,prediction,print_to_console)
-        self._log_f1(epoch,ground_truth,predction,print_to_console)
+        global_accuracy, accuracy = self._log_accuracy(epoch,ground_truth,prediction,print_to_console)
+        global_recall, recall = self._log_recall(epoch,ground_truth,prediction,print_to_console)
+        global_precision, precision = self._log_precision(epoch,ground_truth,prediction,print_to_console)
+        global_f1, f1 = self._log_f1(epoch,ground_truth,prediction,print_to_console)
         self._log_confusion_matrix(epoch,ground_truth,prediction,print_to_console)
+        self.stats[self.phase]["epoch"].append(epoch)
+        self.stats[self.phase]["global_accuracy"].append(global_accuracy)
+        self.stats[self.phase]["accuracy"].append(accuracy)
+        self.stats[self.phase]["global_recall"].append(global_recall)
+        self.stats[self.phase]["recall"].append(recall)
+        self.stats[self.phase]["global_precision"].append(global_precision)
+        self.stats[self.phase]["precision"].append(precision)
+        self.stats[self.phase]["global_f1"].append(global_f1)
+        self.stats[self.phase]["f1"].append(f1)
+        stats_dataframe = pd.DataFrame.from_dict(self.stats[self.phase])
+        stats_dataframe.to_csv(self.stat_save_dir[self.phase])
+
+    def round_to_2_decimal(
+        self, 
+        stats
+    ):
+        return [round(item, 2) for item in stats]
+
+
+
+
 

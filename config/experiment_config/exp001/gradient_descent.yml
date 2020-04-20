@@ -1,6 +1,6 @@
 # Basic Info
 basic_config: {
-  experiment_name: "exp001_arena",
+  experiment_name: "exp001_gradient_descent",
   experiment_performer: "yiyuanyang",
   experiment_date: "2020-04-18",
 }
@@ -16,7 +16,7 @@ data_config: {
   ],
   eval_data: ["data_batch_5"],
   test_data: ["test_batch"],
-  in_channels: 1,
+  in_channels: 3,
   image_size: 32,
   num_classes: 10,
   data_loader_params: {
@@ -36,7 +36,8 @@ train_config: {
     start_epoch: 1,
     max_epoch: 150,
     use_existing_model: False,
-    learning_rate: 0.001,
+    adjust_learning_rate: True,
+    learning_rate: 0.01,
     eval_only: False,
     adjust_lr: True,
     steps: [30,60,90,120,150],
@@ -49,5 +50,7 @@ train_config: {
 save_config: {
   save_dir: "E:\\saved_experiments\\evolution", 
   use_logger: True,
-  dump_frequency: 10
+  dump_frequency: 10,
+  log_frequency: 200,
+  display_frequency: 1000
 }

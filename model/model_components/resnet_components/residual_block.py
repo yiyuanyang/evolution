@@ -27,20 +27,30 @@ class ResidualBlock(torch.nn.Module):
 
         self.conv1 = nn.Conv2d(
             in_channels=in_channels,
-            out_channels=in_channels,
-            kernel_size=kernel_size,
-            stride=stride,
-            padding=padding
-        )
-        self.conv2 = nn.Conv2d(
-            in_channels=in_channels,
             out_channels=out_channels,
             kernel_size=kernel_size,
             stride=stride,
             padding=padding
         )
+        self.conv2 = nn.Conv2d(
+            in_channels=out_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding
+        )
+        self.conv_short = nn.Conv2d(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=[1,1],
+            stride=1,
+            padding=0,
+            bias=False
+        )
+        self.conv_short.weight.require_grad=False
+        torch.nn.init.ones_(self.conv_short.weight)
 
-        self.bn1 = nn.BatchNorm2d(in_channels)
+        self.bn1 = nn.BatchNorm2d(out_channels)
         self.bn2 = nn.BatchNorm2d(out_channels)
         self.relu = nn.ReLU()
 
@@ -64,7 +74,8 @@ class ResidualBlock(torch.nn.Module):
         out = self.conv2(out)
         out = self.bn2(out)
         
-        out += x
+        short_cut = self.conv_short(x)
+        out += short_cut
         out = self.relu(out)
 
         if self.downsample:
