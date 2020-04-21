@@ -374,6 +374,38 @@ class Logger(object):
         stats_dataframe = pd.DataFrame.from_dict(self.stats[self.phase])
         stats_dataframe.to_csv(self.stat_save_dir[self.phase])
 
+    def log_model(
+        self,
+        model,
+        print_to_console=True
+    ):
+        model_log = str(model)
+        self.log("===================")
+        self.log("Current Model Used:")
+        self.log(model_log)
+        if print_to_console:
+            print("==================")
+            print("Current Model Used:")
+            print(model_log)
+
+
+    def log_model_statistics(
+        self,
+        model,
+        model_name,
+        calculate_statistics,
+        print_to_console=True
+    ):
+        message_string = calculate_statistics(model, model_name)
+        self.log("==================")
+        self.log("Model Statistics:")
+        self.log(message_string)
+        if print_to_console:
+            print("==================")
+            print("Model Statistics:")
+            print(message_string)
+
+
     def round_to_2_decimal(
         self, 
         stats

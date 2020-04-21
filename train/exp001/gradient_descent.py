@@ -12,6 +12,7 @@ import numpy as numpy
 from tqdm import tqdm
 from Evolution.model.models.resnet.resnet10_flatten import ResNet10Flatten
 from Evolution.data.CIFAR10.CIFAR10_dataset import CIFAR10Dataset
+from Evolution.utils.weights_understanding.ResNet.resnet10_flatten import calculate_statistics
 import torch.nn.functional as F
 from sklearn import metrics
 
@@ -91,8 +92,16 @@ class Trainer(object):
         )
 
     def train(self):
+        # Get variables
         learning_config = self.train_config["learning_config"]
         self.learning_rate = learning_config["learning_rate"]
+
+        self.logger.log_model(
+            self.model,
+            print_to_console=True
+        )
+
+        # Start training
         for epoch in tqdm(range(
                 learning_config["start_epoch"],
                 learning_config["max_epoch"]
@@ -140,16 +149,24 @@ class Trainer(object):
 
         all_prediction, all_ground_truth, all_loss = [],[],[]
         for batch_index, (data, ground_truth) in enumerate(self.data_loaders[phase]):
+
             # Some Logging data to see everything is correct
-            if batch_index == 0 and phase != 2:
+            if batch_index == 1 and phase != 2:
                 self.logger.log_data(
                     batch_index=batch_index,
                     data=data,
                     label=ground_truth,
                     print_to_console=True
                 )
+                self.logger.log_model_statistics(
+                    model=self.model,
+                    model_name=self.basic_config["experiment_name"] + "ResNet10_flatten",
+                    calculate_statistics=calculate_statistics,
+                    print_to_console=True
+                )
             if batch_index % 200 == 0:
                 print("Batch: " + str(batch_index) + "/" + str(len(self.data_loaders[phase])))
+
 
             # Calculations
             data, ground_truth = data.to(self.device).type(torch.float32), ground_truth.to(self.device)
@@ -160,7 +177,8 @@ class Trainer(object):
             if phase == 0:
                 loss.backward()
                 self.optim.step()
-            
+
+
             # Format
             prediction_prob = prediction.data.cpu().numpy().tolist()
             ground_truth = ground_truth.data.cpu().numpy().tolist()
@@ -169,6 +187,7 @@ class Trainer(object):
             all_prediction += prediction
             all_ground_truth += ground_truth
             all_loss.append(loss)
+
 
             # Logging the results
             if batch_index % self.save_config["log_frequency"]==0:
@@ -184,7 +203,7 @@ class Trainer(object):
                     loss=loss,
                     print_to_console=print_to_console
                 )
-        
+
         # Record results from the entire epoch
         print_to_console=True
         if phase==2:
