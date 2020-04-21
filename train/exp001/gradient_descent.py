@@ -164,6 +164,10 @@ class Trainer(object):
             self.optim.zero_grad()
             if phase == 0:
                 loss.backward()
+                nn.utils.clip_grad_norm_(
+                    self.model.parameters(), 
+                    self.train_config["learning_config"]["gradient_clipping"]
+                )
                 self.optim.step()
 
 
