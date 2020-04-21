@@ -39,8 +39,7 @@ class Trainer(object):
         self.load_data()
         self.logger.log_config(
             config_name="Experiment Config",
-            config=self.experiment_preparer.get_each_config(),
-            print_to_console=True
+            config=self.experiment_preparer.get_each_config()
         )
 
     def load_data(self):
@@ -87,8 +86,7 @@ class Trainer(object):
         self.logger.log_learning_rate_change(
             epoch=epoch, 
             cur=cur_learning_rate, 
-            new=self.learning_rate,
-            print_to_console=True
+            new=self.learning_rate
         )
 
     def train(self):
@@ -96,10 +94,7 @@ class Trainer(object):
         learning_config = self.train_config["learning_config"]
         self.learning_rate = learning_config["learning_rate"]
 
-        self.logger.log_model(
-            self.model,
-            print_to_console=True
-        )
+        self.logger.log_model(self.model)
 
         # Start training
         for epoch in tqdm(range(
@@ -141,11 +136,7 @@ class Trainer(object):
         else:
             self.model.eval()
         
-        self.logger.set_phase(
-            epoch, 
-            phase, 
-            print_to_console=True
-        )
+        self.logger.set_phase(epoch, phase)
 
         all_prediction, all_ground_truth, all_loss = [],[],[]
         for batch_index, (data, ground_truth) in enumerate(self.data_loaders[phase]):
@@ -155,14 +146,12 @@ class Trainer(object):
                 self.logger.log_data(
                     batch_index=batch_index,
                     data=data,
-                    label=ground_truth,
-                    print_to_console=True
+                    label=ground_truth
                 )
                 self.logger.log_model_statistics(
                     model=self.model,
                     model_name=self.basic_config["experiment_name"] + "ResNet10_flatten",
-                    calculate_statistics=calculate_statistics,
-                    print_to_console=True
+                    calculate_statistics=calculate_statistics
                 )
             if batch_index % 200 == 0:
                 print("Batch: " + str(batch_index) + "/" + str(len(self.data_loaders[phase])))
@@ -191,29 +180,21 @@ class Trainer(object):
 
             # Logging the results
             if batch_index % self.save_config["log_frequency"]==0:
-                print_to_console = False
-                if batch_index % self.save_config["display_frequency"] == 0:
-                    print_to_console = True
                 self.logger.log_batch_result(
                     batch_index=batch_index,
                     total_batches=len(self.data_loaders[phase]),
                     prediction_prob=prediction_prob,
                     prediction=prediction,
                     ground_truth=ground_truth,
-                    loss=loss,
-                    print_to_console=print_to_console
+                    loss=loss
                 )
 
         # Record results from the entire epoch
-        print_to_console=True
-        if phase==2:
-            print_to_console=False
         self.logger.log_epoch_metrics(
             epoch,
             all_ground_truth,
             all_prediction,
-            all_loss,
-            print_to_console=print_to_console
+            all_loss
         )
         
 

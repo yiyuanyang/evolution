@@ -15,11 +15,13 @@ class Logger(object):
     def __init__(
         self, 
         logger_save_dir, 
-        dump_frequency = 10
+        dump_frequency = 10,
+        print_to_console = True
     ):
         self.messages = []
         self.dump_frequency = 10
         self.phase = 3
+        self.print_to_console = print_to_console
 
         if not os.path.exists(logger_save_dir):
             print("FATAL: Save Directory Does not Exist")
@@ -74,31 +76,34 @@ class Logger(object):
 
 
     # Basic helper functions
-    def _log(self, log, force_dump = False, print_to_console=True):
+    def _log(self, log, force_dump = False):
         self.messages.append(log)
         if force_dump or len(self.messages) >= self.dump_frequency:
             self._dump()
-        if print_to_console:
+        if self.print_to_console:
             print(log)
+
 
     def set_phase(
         self,
         epoch,
-        phase,
-        print_to_console=True
+        phase
     ):
         """
             Set current phase of logger
         """
-        phases = ["Train", "Eval", "Test"]
         if len(self.messages) != 0:
             self._dump()
+
+        phases = ["Train", "Eval", "Test"]
         self.phase = phase
-        self.log("======================SWITCHING PHASE=========================")
+
+        self.log(
+            "======================SWITCHING PHASE=========================")
         log = "LOGGING: Starting " + phases[phase] + " phase for epoch " + str(epoch)
+
         self._log(
-            log=log,
-            print_to_console=print_to_console
+            log=log
         )
 
 
@@ -109,47 +114,30 @@ class Logger(object):
         file = open(self.logger_save_dir[self.phase], "a")
         file.writelines(self.messages)
 
-    # Here are all the random logging functions
 
+    # Here are all the random logging functions
     def fatal(
         self, 
-        message, 
-        print_to_console=True
+        message
     ):
-        self._log(
-            log="FATAL: " + message, 
-            force_dump=True, 
-            print_to_console=print_to_console
-        )
+        self._log(log="FATAL: " + message, force_dump=True)
         sys.exit()
     
+
     def warning(
         self, 
-        message, 
-        print_to_console=True
+        message
     ):
+        self._log(log="WARNING: " + message)
+
+
+    def log(self, message):
         self._log(
-            log="WARNING: " + message, 
-            print_to_console=print_to_console
+            log="LOGGING: " + message
         )
 
-    def log(
-        self, 
-        message,
-        print_to_console=True
-    ):
-        self._log(
-            log="LOGGING: " + message,
-            print_to_console=print_to_console
-        )
 
-    def log_learning_rate_change(
-        self, 
-        epoch, 
-        cur, 
-        new, 
-        print_to_console=True
-    ):
+    def log_learning_rate_change(self, epoch, cur, new):
         """
             Logs changes in learning rate
         """
@@ -157,24 +145,17 @@ class Logger(object):
             str(cur) + " to " + str(new))
     
         self._log(
-            log=log,
-            print_to_console=print_to_console
+            log=log
         )
 
-    def log_config(
-        self, 
-        config_name, 
-        config, 
-        print_to_console=True
-    ):
+    def log_config(self, config_name, config):
         """
             This logs a config
         """
         log = "LOGGING: " + config_name + ": " + yaml.dump(config)
 
         self._log(
-            log=log,
-            print_to_console=print_to_console
+            log=log
         )
 
     def log_batch_result(
@@ -184,8 +165,7 @@ class Logger(object):
         prediction_prob,
         prediction,
         ground_truth,
-        loss,
-        print_to_console=True
+        loss
     ):
         """
             This logs a batch run's result
@@ -199,17 +179,11 @@ class Logger(object):
             "\n Loss: " + str(loss))
 
         self._log(
-            log=log, 
-            print_to_console=print_to_console
+            log=log
         )
 
-    def log_data(
-        self,
-        batch_index,
-        data,
-        label,
-        print_to_console=True
-    ):
+
+    def log_data(self, batch_index, data, label):
         """
             This logs the shape and value of data
         """
@@ -218,16 +192,14 @@ class Logger(object):
                 " Label Shape: " + str(list(label.shape)))
         
         self._log(
-            log=log,
-            print_to_console=print_to_console
+            log=log
         )
     
     def _log_accuracy(
         self,
         epoch,
         ground_truth,
-        prediction,
-        print_to_console=True
+        prediction
     ):  
         """
             Logs the confusion matrix
@@ -246,42 +218,31 @@ class Logger(object):
         "\nAccuracy Scores : " + str(accuracy_scores))
         
         self._log(
-            log=log,
-            print_to_console=print_to_console
+            log=log
         )
 
         return round(global_accuracy,2), accuracy_scores
 
-    def _log_f1(
-        self,
-        epoch,
-        ground_truth,
-        prediction,
-        print_to_console=True
-    ):  
+
+    def _log_f1(self, epoch, ground_truth, prediction):  
         """
             Logs the confusion matrix
         """
+
         f1_scores = metrics.f1_score(ground_truth, prediction, average=None)
         global_f1 = round(np.mean(f1_scores),2)
         f1_scores = self.round_to_2_decimal(f1_scores)
+
         log = ("LOGGING: Epoch " + str(epoch) + 
                 " Global F1: " + str(global_f1) +
                 "\nF1 Scores: " + str(f1_scores))
         
-        self._log(
-            log=log,
-            print_to_console=print_to_console
-        )
+        self._log(log=log)
+
         return global_f1, f1_scores
 
-    def _log_recall(
-        self,
-        epoch,
-        ground_truth,
-        prediction,
-        print_to_console=True
-    ):  
+
+    def _log_recall(self, epoch, ground_truth, prediction):  
         """
             Logs the confusion matrix
         """
@@ -292,19 +253,12 @@ class Logger(object):
                 " Globall Recall: " + str(global_recall) + 
                 "\nRecall Scores: " + str(recall_scores))
         
-        self._log(
-            log=log,
-            print_to_console=print_to_console
-        )
+        self._log(log=log)
+
         return global_recall, recall_scores
 
-    def _log_precision(
-        self,
-        epoch,
-        ground_truth,
-        prediction,
-        print_to_console=True
-    ):  
+
+    def _log_precision(self, epoch, ground_truth, prediction):  
         """
             Logs the confusion matrix
         """
@@ -315,19 +269,12 @@ class Logger(object):
                 " Global Precision: " + str(global_precision) +
                 "\nPrecision Scores: " + str(precision_scores))
         
-        self._log(
-            log=log,
-            print_to_console=print_to_console
-        )
+        self._log(log=log)
+
         return global_precision, precision_scores
 
-    def _log_confusion_matrix(
-        self,
-        epoch,
-        ground_truth,
-        prediction,
-        print_to_console=True
-    ):  
+
+    def _log_confusion_matrix(self,epoch,ground_truth,prediction):  
         """
             Logs the confusion matrix
         """
@@ -338,30 +285,44 @@ class Logger(object):
         log = ("LOGGING: Epoch " + str(epoch) + 
                 "\n Confusion Matrix: \n" + str(confusion_matrix))
         
-        self._log(
-            log=log,
-            print_to_console=print_to_console
-        )
+        self._log(log=log)
 
-    def log_epoch_metrics(
-        self,
-        epoch,
-        ground_truth,
-        prediction,
-        loss,
-        print_to_console=True
-    ):
+
+    def log_epoch_metrics(self, epoch, ground_truth, prediction, loss):
         """
             Perform all metrics
         """
         ground_truth = [int(item) for item in ground_truth]
         prediction = [int(item) for item in prediction]
-        self.log("===================EPOCH SUMMARY=====================",print_to_console)
-        global_accuracy, accuracy = self._log_accuracy(epoch,ground_truth,prediction,print_to_console)
-        global_recall, recall = self._log_recall(epoch,ground_truth,prediction,print_to_console)
-        global_precision, precision = self._log_precision(epoch,ground_truth,prediction,print_to_console)
-        global_f1, f1 = self._log_f1(epoch,ground_truth,prediction,print_to_console)
-        self._log_confusion_matrix(epoch,ground_truth,prediction,print_to_console)
+
+        self.log("===================EPOCH SUMMARY=====================")
+
+        global_accuracy, accuracy = self._log_accuracy(
+            epoch,
+            ground_truth,
+            prediction
+        )
+        global_recall, recall = self._log_recall(
+            epoch,
+            ground_truth,
+            prediction
+        )
+        global_precision, precision = self._log_precision(
+            epoch,
+            ground_truth,
+            prediction
+        )
+        global_f1, f1 = self._log_f1(
+            epoch,
+            ground_truth,
+            prediction
+        )
+        self._log_confusion_matrix(
+            epoch,
+            ground_truth,
+            prediction
+        )
+
         self.stats[self.phase]["epoch"].append(epoch)
         self.stats[self.phase]["global_accuracy"].append(global_accuracy)
         self.stats[self.phase]["accuracy"].append(accuracy)
@@ -371,39 +332,71 @@ class Logger(object):
         self.stats[self.phase]["precision"].append(precision)
         self.stats[self.phase]["global_f1"].append(global_f1)
         self.stats[self.phase]["f1"].append(f1)
+
         stats_dataframe = pd.DataFrame.from_dict(self.stats[self.phase])
         stats_dataframe.to_csv(self.stat_save_dir[self.phase])
 
+
     def log_model(
         self,
-        model,
-        print_to_console=True
+        model
     ):
         model_log = str(model)
         self.log("===================")
         self.log("Current Model Used:")
         self.log(model_log)
-        if print_to_console:
-            print("==================")
-            print("Current Model Used:")
-            print(model_log)
 
 
     def log_model_statistics(
         self,
         model,
         model_name,
-        calculate_statistics,
-        print_to_console=True
+        calculate_statistics
     ):
         message_string = calculate_statistics(model, model_name)
         self.log("==================")
         self.log("Model Statistics:")
         self.log(message_string)
-        if print_to_console:
-            print("==================")
-            print("Model Statistics:")
-            print(message_string)
+
+
+    def log_conv_statistics(
+        self,
+        statistics,
+        name
+    ):
+        weight_statistics, bias_statistics, grad_statistics = statistics
+        self._log("Stats for {name}".format(name=name))
+        self.log_tensor_statistics(
+            weight_statistics, 
+            "weights"
+        )
+        if bias_statistics is not None:
+            self.log_tensor_statistics(
+                bias_statistics, 
+                "bias"
+            )
+        if grad_statistics is not None:
+            self.log_tensor_statistics(
+                grad_statistics, 
+                "grad"
+            )
+
+
+    def log_tensor_statistics(
+        self,
+        statistics,
+        name
+    ):
+        max_val, min_val, range_val, mean_val, stdev = statistics
+        msg = "Stats for {name}".format(name=name),
+        msg += "max {max_val} min {min_val} range {range_val} mean {mean_val} stdev {stdev}".format(
+                max_val=np.format_float_scientific(max_val.cpu().numpy(), precision=2),
+                min_val=np.format_float_scientific(min_val.cpu().numpy(), precision=2),
+                range_val=np.format_float_scientific(range_val.cpu().numpy(), precision=2),
+                mean_val=np.format_float_scientific(mean_val.cpu().numpy(), precision=2),
+                stdev=np.format_float_scientific(stdev.cpu().numpy(), precision=2)
+        )
+        self._log(msg)
 
 
     def round_to_2_decimal(
