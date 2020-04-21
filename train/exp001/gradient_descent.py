@@ -42,6 +42,7 @@ class Trainer(object):
             config=self.experiment_preparer.get_each_config()
         )
 
+
     def load_data(self):
         train_dataset = CIFAR10Dataset(
             self.data_config["train_data"],
@@ -69,6 +70,7 @@ class Trainer(object):
         )
         self.data_loaders = [train_loader, eval_loader, test_loader]
     
+
     def adjust_learning_rate(
         self, 
         epoch
@@ -88,6 +90,7 @@ class Trainer(object):
             cur=cur_learning_rate, 
             new=self.learning_rate
         )
+
 
     def train(self):
         # Get variables
@@ -120,6 +123,7 @@ class Trainer(object):
                 self.epoch(epoch,1)
                 self.epoch(epoch,2)
 
+
     def epoch(
         self, 
         epoch,
@@ -142,16 +146,11 @@ class Trainer(object):
         for batch_index, (data, ground_truth) in enumerate(self.data_loaders[phase]):
 
             # Some Logging data to see everything is correct
-            if batch_index == 1 and phase != 2:
+            if batch_index == 0 and phase != 2:
                 self.logger.log_data(
                     batch_index=batch_index,
                     data=data,
                     label=ground_truth
-                )
-                self.logger.log_model_statistics(
-                    model=self.model,
-                    model_name=self.basic_config["experiment_name"] + "ResNet10_flatten",
-                    calculate_statistics=calculate_statistics
                 )
             if batch_index % 200 == 0:
                 print("Batch: " + str(batch_index) + "/" + str(len(self.data_loaders[phase])))
@@ -195,6 +194,11 @@ class Trainer(object):
             all_ground_truth,
             all_prediction,
             all_loss
+        )
+        self.logger.log_model_statistics(
+            model=self.model,
+            model_name=self.basic_config["experiment_name"] + "ResNet10_flatten",
+            calculate_statistics=calculate_statistics
         )
         
 
