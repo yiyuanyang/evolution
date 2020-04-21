@@ -12,7 +12,7 @@ import numpy as numpy
 from tqdm import tqdm
 from Evolution.model.models.resnet.resnet10_flatten import ResNet10Flatten
 from Evolution.data.CIFAR10.CIFAR10_dataset import CIFAR10Dataset
-from Evolution.utils.weights_understanding.ResNet.resnet10_flatten import calculate_statistics
+from Evolution.utils.weights_understanding.ResNet.resnet10_flatten_weights_understanding import calculate_statistics
 import torch.nn.functional as F
 from sklearn import metrics
 

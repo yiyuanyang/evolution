@@ -1,5 +1,5 @@
 """
-    Content: Logger Object that can be passed around to do logging
+    Content: Logger object that can be passed around to do logging
     Author: Yiyuan Yang
     Date: April. 18th 2020
 """
@@ -158,6 +158,9 @@ class Logger(object):
             log=log
         )
 
+
+    #=====================================================
+    # Data related logging
     def log_batch_result(
         self, 
         batch_index,
@@ -194,7 +197,10 @@ class Logger(object):
         self._log(
             log=log
         )
-    
+
+
+    #======================================================================
+    # Performance related logging 
     def _log_accuracy(
         self,
         epoch,
@@ -336,7 +342,7 @@ class Logger(object):
         stats_dataframe = pd.DataFrame.from_dict(self.stats[self.phase])
         stats_dataframe.to_csv(self.stat_save_dir[self.phase])
 
-
+    # Model Related Logging
     def log_model(
         self,
         model
@@ -346,17 +352,14 @@ class Logger(object):
         self.log("Current Model Used:")
         self.log(model_log)
 
-
     def log_model_statistics(
         self,
         model,
         model_name,
         calculate_statistics
     ):
-        message_string = calculate_statistics(model, model_name)
-        self.log("==================")
-        self.log("Model Statistics:")
-        self.log(message_string)
+        self._log("\n=====\nWeight Statistics for Model")
+        calculate_statistics(model, model_name, self)
 
 
     def log_conv_statistics(
@@ -368,17 +371,17 @@ class Logger(object):
         self._log("Stats for {name}".format(name=name))
         self.log_tensor_statistics(
             weight_statistics, 
-            "weights"
+            "weight"
         )
         if bias_statistics is not None:
             self.log_tensor_statistics(
                 bias_statistics, 
-                "bias"
+                "bias  "
             )
         if grad_statistics is not None:
             self.log_tensor_statistics(
                 grad_statistics, 
-                "grad"
+                "grad  "
             )
 
 
@@ -388,13 +391,13 @@ class Logger(object):
         name
     ):
         max_val, min_val, range_val, mean_val, stdev = statistics
-        msg = "Stats for {name}".format(name=name),
-        msg += "max {max_val} min {min_val} range {range_val} mean {mean_val} stdev {stdev}".format(
-                max_val=np.format_float_scientific(max_val.cpu().numpy(), precision=2),
-                min_val=np.format_float_scientific(min_val.cpu().numpy(), precision=2),
-                range_val=np.format_float_scientific(range_val.cpu().numpy(), precision=2),
-                mean_val=np.format_float_scientific(mean_val.cpu().numpy(), precision=2),
-                stdev=np.format_float_scientific(stdev.cpu().numpy(), precision=2)
+        msg = "{name}".format(name=name)
+        msg += " max {max_val} min {min_val} range {range_val} mean {mean_val} stdev {stdev}".format(
+                max_val=np.format_float_scientific(max_val.data.cpu().numpy(), precision=2),
+                min_val=np.format_float_scientific(min_val.data.cpu().numpy(), precision=2),
+                range_val=np.format_float_scientific(range_val.data.cpu().numpy(), precision=2),
+                mean_val=np.format_float_scientific(mean_val.data.cpu().numpy(), precision=2),
+                stdev=np.format_float_scientific(stdev.data.cpu().numpy(), precision=2)
         )
         self._log(msg)
 

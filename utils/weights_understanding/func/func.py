@@ -20,7 +20,7 @@ def tensor_statistics(
         tensor = torch.flatten(tensor)
     max_val = torch.max(tensor)
     min_val = torch.min(tensor)
-    range_val = max_value - min_value
+    range_val = max_val - min_val
     mean_val = torch.mean(tensor)
     stdev = torch.std(tensor)
     tensor_stats = [max_val, min_val, range_val, mean_val, stdev]
@@ -50,7 +50,7 @@ def residual_block_statistics(
     weight_statistics = tensor_statistics(weight)
 
     bias = torch.cat(
-        [conv1.bias, conv2.bias, conv3.bias]
+        [conv1.bias, conv2.bias]
     )
     bias_statistics = tensor_statistics(bias)
 
