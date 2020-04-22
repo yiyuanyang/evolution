@@ -20,7 +20,7 @@ data_config: {
   image_size: 32,
   num_classes: 10,
   data_loader_params: {
-    shuffle: True,
+    shuffle: False,
     num_workers: 8,
     batch_size: 10
   }

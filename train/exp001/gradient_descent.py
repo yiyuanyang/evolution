@@ -144,7 +144,6 @@ class Trainer(object):
 
         all_prediction, all_ground_truth, all_loss = [],[],[]
         for batch_index, (data, ground_truth) in enumerate(self.data_loaders[phase]):
-
             # Some Logging data to see everything is correct
             if batch_index == 0 and phase != 2:
                 self.logger.log_data(
@@ -199,11 +198,12 @@ class Trainer(object):
             all_prediction,
             all_loss
         )
-        self.logger.log_model_statistics(
-            model=self.model,
-            model_name=self.basic_config["experiment_name"] + "ResNet10_flatten",
-            calculate_statistics=calculate_statistics
-        )
+        if phase == 0:
+            self.logger.log_model_statistics(
+                model=self.model,
+                model_name=self.basic_config["experiment_name"] + "ResNet10_flatten",
+                calculate_statistics=calculate_statistics
+            )
         
 
 

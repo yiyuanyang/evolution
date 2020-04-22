@@ -94,6 +94,9 @@ class Logger(object):
         """
         if len(self.messages) != 0:
             self._dump()
+        
+        if phase != 2:
+            self.print_to_console=True
 
         phases = ["Train", "Eval", "Test"]
         self.phase = phase
@@ -105,6 +108,9 @@ class Logger(object):
         self._log(
             log=log
         )
+
+        if phase == 2:
+            self.print_to_console=False
 
 
     def _dump(self):
@@ -173,7 +179,7 @@ class Logger(object):
         """
             This logs a batch run's result
         """
-        prediction_prob = [self.round_to_2_decimal(item) for item in prediction_prob]
+        prediction_prob = [self.round_to_4_decimal(item) for item in prediction_prob]
         prediction_string = [str(item) for item in prediction_prob]
         prediction_string = "\n".join(prediction_string)
         log = ("LOGGING: Batch " + str(batch_index) + "/" + str(total_batches) +
@@ -401,6 +407,12 @@ class Logger(object):
         )
         self._log(msg)
 
+
+    def round_to_4_decimal(
+        self, 
+        stats
+    ):
+        return [round(item, 4) for item in stats]
 
     def round_to_2_decimal(
         self, 
