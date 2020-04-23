@@ -20,10 +20,10 @@ class ResidualBlock(torch.nn.Module):
         stride,
         padding,
         bias = True,
-        downsample = False,
     ):
         super(ResidualBlock, self).__init__()
-        self.downsample = downsample
+        if stride != 1:
+            self.downsample = True
 
         self.conv1 = nn.Conv2d(
             in_channels=in_channels,
@@ -36,19 +36,9 @@ class ResidualBlock(torch.nn.Module):
             in_channels=out_channels,
             out_channels=out_channels,
             kernel_size=kernel_size,
-            stride=stride,
+            stride=1,
             padding=padding
         )
-        self.conv_short = nn.Conv2d(
-            in_channels=in_channels,
-            out_channels=out_channels,
-            kernel_size=[1,1],
-            stride=1,
-            padding=0,
-            bias=False
-        )
-        self.conv_short.weight.require_grad=False
-        torch.nn.init.ones_(self.conv_short.weight)
 
         self.bn1 = nn.BatchNorm2d(out_channels)
         self.bn2 = nn.BatchNorm2d(out_channels)
@@ -56,11 +46,11 @@ class ResidualBlock(torch.nn.Module):
 
         if self.downsample:
             self.downsample_block = nn.Conv2d(
-                in_channels=out_channels,
+                in_channels=in_channels,
                 out_channels=out_channels,
                 kernel_size=kernel_size,
-                stride=stride * 2,
-                padding=1
+                stride=stride,
+                padding=padding
             )
     
     def forward(
@@ -73,13 +63,12 @@ class ResidualBlock(torch.nn.Module):
 
         out = self.conv2(out)
         out = self.bn2(out)
-        
-        short_cut = self.conv_short(x)
-        out += short_cut
         out = self.relu(out)
-
+        
         if self.downsample:
-            out = self.downsample_block(out)
+            out += self.downsample_block(x)
+        else:
+            out += x
 
         return out
 

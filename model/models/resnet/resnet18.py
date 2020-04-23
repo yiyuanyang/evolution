@@ -18,4 +18,10 @@ class ResNet18(nn.Module):
         in_channels
     ):
         super().__init__()
-        self.residual_block_1 = ResidualBlock(in_channels, 32, 3, 1, 1, True)
+        self.residual_block_1 = ResidualBlock(
+            in_channels=in_channels, 
+            out_channels=64, 
+            kernel_size=3, 
+            stride=1, 
+            padding=1
+            )

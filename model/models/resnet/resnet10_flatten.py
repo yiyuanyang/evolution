@@ -22,24 +22,15 @@ class ResNet10Flatten(nn.Module):
         super().__init__()
         final_image_size = int(image_size / (2**3))
         self.ResNet_Skeleton = ResNet10(in_channels)
-        self.final_layer = nn.Conv2d(
-            in_channels=128, 
-            out_channels=num_classes,
-            kernel_size=final_image_size,
-            stride=1,
-            padding=0)
-        self.final_batchnorm = nn.BatchNorm2d(
-            num_classes
-        )
+        self.final_layer = nn.Linear(256 * final_image_size * final_image_size, 10)
     
     def forward(
         self, 
         x
     ):
         x = self.ResNet_Skeleton(x)
-        x = self.final_layer(x)
-        x = self.final_batchnorm(x)
         x = x.view(x.size(0), -1)
+        x = self.final_layer(x)
         return x
         
             
