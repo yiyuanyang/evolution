@@ -17,11 +17,41 @@ class ResNet10(nn.Module):
         in_channels,
     ):
         super().__init__()
-        self.residual_block_1 = ResidualBlock(in_channels, 64, 3, 1, 1, True, True)
-        self.residual_block_2 = ResidualBlock(64, 64, 3, 1, 1, True, False)
-        self.residual_block_3 = ResidualBlock(64, 128, 3, 1, 1, True, True)
-        self.residual_block_4 = ResidualBlock(128, 128, 3, 1, 1, True, False)
-        self.residual_block_5 = ResidualBlock(128, 256, 3, 1, 1, True, True)
+        self.residual_block_1 = ResidualBlock(
+            in_channels=in_channels, 
+            out_channels=64, 
+            kernel_size=3, 
+            stride=2, 
+            padding=1
+        )
+        self.residual_block_2 = ResidualBlock(
+            in_channels=64, 
+            out_channels=64, 
+            kernel_size=3, 
+            stride=1, 
+            padding=1
+        )
+        self.residual_block_3 = ResidualBlock(
+            in_channels=64, 
+            out_channels=128, 
+            kernel_size=3, 
+            stride=2, 
+            padding=1
+        )
+        self.residual_block_4 = ResidualBlock(
+            in_channels=128, 
+            out_channels=128, 
+            kernel_size=3, 
+            stride=1, 
+            padding=1
+        )
+        self.residual_block_5 = ResidualBlock(
+            in_channels=128, 
+            out_channels=256, 
+            kernel_size=3, 
+            stride=2, 
+            padding=1
+        )
     
     def forward(
         self, 
