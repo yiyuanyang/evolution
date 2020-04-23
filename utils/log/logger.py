@@ -48,7 +48,8 @@ class Logger(object):
                 "global_precision":[],
                 "precision":[],
                 "global_f1":[],
-                "f1":[]
+                "f1":[],
+                "loss":[]
             },
             {
                 "epoch":[],
@@ -59,7 +60,8 @@ class Logger(object):
                 "global_precision":[],
                 "precision":[],
                 "global_f1":[],
-                "f1":[]
+                "f1":[],
+                "loss":[]
             },
             {
                 "epoch":[],
@@ -70,7 +72,8 @@ class Logger(object):
                 "global_precision":[],
                 "precision":[],
                 "global_f1":[],
-                "f1":[]
+                "f1":[],
+                "loss":[]
             },
         ]
 
@@ -174,18 +177,20 @@ class Logger(object):
         prediction_prob,
         prediction,
         ground_truth,
-        loss
+        loss,
+        top_n=5
     ):
         """
             This logs a batch run's result
         """
         prediction_prob = [self.round_to_4_decimal(item) for item in prediction_prob]
         prediction_string = [str(item) for item in prediction_prob]
-        prediction_string = "\n".join(prediction_string)
+        prediction_string = "\n".join(prediction_string[:top_n])
         log = ("LOGGING: Batch " + str(batch_index) + "/" + str(total_batches) +
-            "\n Prediction Probability: \n" + prediction_string +
-            "\n Prediction:" + str(prediction) + "\n Ground Truth: " + str(ground_truth) + 
-            "\n Loss: " + str(loss))
+            "\n Prediction Probability for top {top_n}: \n".format(top_n=top_n) + 
+            prediction_string + "\n Prediction:" + str(prediction[:top_n]) + "\n Ground Truth: " + 
+            str(ground_truth[:top_n]) + "\n Batch Loss: " + str(loss)
+        )
 
         self._log(
             log=log
@@ -284,6 +289,14 @@ class Logger(object):
         self._log(log=log)
 
         return global_precision, precision_scores
+    
+
+    def _log_loss(self, epoch, loss):
+        loss = np.mean(loss)
+        log = ("LOGGING: Epoch " + str(epoch) + 
+                " Loss: " + str(loss))
+        self._log(log=log)
+        return loss
 
 
     def _log_confusion_matrix(self,epoch,ground_truth,prediction):  
@@ -329,6 +342,10 @@ class Logger(object):
             ground_truth,
             prediction
         )
+        global_loss = self._log_loss(
+            epoch,
+            loss
+        )
         self._log_confusion_matrix(
             epoch,
             ground_truth,
@@ -344,6 +361,7 @@ class Logger(object):
         self.stats[self.phase]["precision"].append(precision)
         self.stats[self.phase]["global_f1"].append(global_f1)
         self.stats[self.phase]["f1"].append(f1)
+        self.stats[self.phase]["loss"].append(global_loss)
 
         stats_dataframe = pd.DataFrame.from_dict(self.stats[self.phase])
         stats_dataframe.to_csv(self.stat_save_dir[self.phase])

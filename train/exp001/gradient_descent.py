@@ -152,7 +152,11 @@ class Trainer(object):
                     label=ground_truth
                 )
             if batch_index % 200 == 0:
-                print("Batch: " + str(batch_index) + "/" + str(len(self.data_loaders[phase])))
+                print("Batch: " + str(batch_index) + 
+                    "/" + str(
+                            len(self.data_loaders[phase])//self.data_config["data_loader_params"]["batch_size"]
+                        )
+                )
 
 
             # Calculations
@@ -163,10 +167,11 @@ class Trainer(object):
             self.optim.zero_grad()
             if phase == 0:
                 loss.backward()
-                nn.utils.clip_grad_norm_(
-                    self.model.parameters(), 
-                    self.train_config["learning_config"]["gradient_clipping"]
-                )
+                if self.train_config["learning_config"]["gradient_clip"]:
+                    nn.utils.clip_grad_norm_(
+                        self.model.parameters(), 
+                        self.train_config["learning_config"]["gradient_clipping"]
+                    )
                 self.optim.step()
 
 
@@ -181,14 +186,15 @@ class Trainer(object):
 
 
             # Logging the results
-            if batch_index % self.save_config["log_frequency"]==0:
+            if phase == 0 and batch_index % self.save_config["log_frequency"]==0:
                 self.logger.log_batch_result(
                     batch_index=batch_index,
                     total_batches=len(self.data_loaders[phase]),
                     prediction_prob=prediction_prob,
                     prediction=prediction,
                     ground_truth=ground_truth,
-                    loss=loss
+                    loss=loss,
+                    top_n=8
                 )
 
         # Record results from the entire epoch

@@ -20,7 +20,7 @@ class ResNet10Flatten(nn.Module):
         num_classes
     ):
         super().__init__()
-        final_image_size = int(image_size / (2**5))
+        final_image_size = int(image_size / (2**3))
         self.ResNet_Skeleton = ResNet10(in_channels)
         self.final_layer = nn.Conv2d(
             in_channels=128, 

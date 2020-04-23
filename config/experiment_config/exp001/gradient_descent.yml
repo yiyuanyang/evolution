@@ -20,9 +20,9 @@ data_config: {
   image_size: 32,
   num_classes: 10,
   data_loader_params: {
-    shuffle: False,
+    shuffle: True,
     num_workers: 8,
-    batch_size: 10
+    batch_size: 80
   }
 }
 
@@ -37,13 +37,14 @@ train_config: {
     max_epoch: 150,
     use_existing_model: False,
     adjust_learning_rate: True,
-    learning_rate: 0.01,
+    learning_rate: 0.1,
     eval_only: False,
     adjust_lr: True,
     steps: [30,60,90,120,150],
     gamma: 0.7,
     loss: "cross_entropy",
-    gradient_clipping: 1
+    gradient_clip: False,
+    gradient_clip_value: 1
   }
 }
 
