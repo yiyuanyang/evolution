@@ -12,6 +12,8 @@ class BasicBlock(torch.nn.Module):
         Re-implementing a basic residual block for shallow resnet
     """
 
+    expansion = 1
+
     def __init__(self, in_channels, channels, kernel_size=3, 
                  stride=1, norm_layer=None):
 
@@ -19,14 +21,13 @@ class BasicBlock(torch.nn.Module):
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
 
-        assert_downsample(in_channels, channels, stride)
-
         self.conv1 = conv_layer(in_channels, channels, kernel_size, stride)
         self.bn1 = norm_layer(channels)
         self.relu = nn.ReLU(inplace=True)
-        self.conv2 = nn.conv_layer(channels, channels, kernel_size)
+        self.conv2 = conv_layer(channels, channels, kernel_size)
         self.bn2 = norm_layer(channels)
 
+        self.downsample = False
         if stride !=1 :
             self.downsample = True
             self.downsample_block = nn.Sequential(
@@ -61,10 +62,11 @@ class BasicBlock(torch.nn.Module):
 
 
 class Bottleneck(nn.Module):
+
+    expansion = 4
+
     def __init__(self, in_channels, channels, kernel_size=3, 
                  stride=1, norm_layer=None):
-            
-        self.expansion = 4
 
         if norm_layer is None:
             norm_layer=nn.BatchNorm2d
@@ -80,6 +82,7 @@ class Bottleneck(nn.Module):
         self.bn3 = norm_layer(channels * self.expansion)
         self.relu = nn.ReLU(inplace=True)
 
+        self.downsample = False
         if stride !=1 :
             self.downsample = True
             self.downsample_block = nn.Sequential(
@@ -138,17 +141,6 @@ def Conv1x1(in_channels, out_channels, stride=1):
         stride=stride,
         bias=False
     )
-
-def assert_downsample(in_channels, out_channels, stride):
-    assert (
-        (stride == 1 and in_channels == out_channels) 
-        or (stride != 1 and in_channels != out_channels),
-        "Inconsistent downsampling with in/out channels:" + 
-        " {in_channels},{out_channels} and stride {stride}".format(
-            in_channels=in_channels,
-            out_channels=out_channels,
-            stride=stride
-        ))
 
 
 

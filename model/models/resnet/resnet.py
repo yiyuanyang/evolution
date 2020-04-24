@@ -22,13 +22,13 @@ def gen_model(
     image_size = config["image_size"]
     num_classes = config["num_classes"]
     if model_type == 'resnet10':
-        return resnet10(in_channels, image_size, num_classes, kernel_sizes, norm_layers)
+        return resnet10(in_channels, image_size, num_classes, kernel_sizes, norm_layer)
     elif model_type == 'resnet18':
-        return resnet18(in_channels, image_size, num_classes, kernel_sizes, norm_layers)
+        return resnet18(in_channels, image_size, num_classes, kernel_sizes, norm_layer)
     elif model_type == 'resnet34':
-        return resnet34(in_channels, image_size, num_classes, kernel_sizes, norm_layers)
+        return resnet34(in_channels, image_size, num_classes, kernel_sizes, norm_layer)
     elif model_type == 'resnet50':
-        return resnet50(in_channels, image_size, num_classes, kernel_sizes, norm_layers)
+        return resnet50(in_channels, image_size, num_classes, kernel_sizes, norm_layer)
 
 
 
@@ -41,10 +41,12 @@ class ResNet(nn.Module):
         in_channels,
         image_size,
         num_classes, 
-        kernel_sizes = [7,3,3,3,3], 
+        kernel_sizes,
         norm_layer=None):
 
         super(ResNet, self).__init__()
+        if kernel_sizes is None:
+            kernel_sizes = [7,3,3,3,3]
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
         self.__norm_layer = norm_layer
@@ -104,13 +106,17 @@ class ResNet(nn.Module):
     def log_weights(self, logger):
         logger.log("Logging resnet weights")
         if self.num_layers > 1:
-            self.layer1.log_weights(logger)
+            for i in range(len(self.layer1)):
+                self.layer1[i].log_weights(logger)
         if self.num_layers > 2:
-            self.layer2.log_weights(logger)
+            for i in range(len(self.layer2)):
+                self.layer2[i].log_weights(logger)
         if self.num_layers >= 3:
-            self.layer3.log_weights(logger)
+            for i in range(len(self.layer3)):
+                self.layer3[i].log_weights(logger)
         if self.num_layers >= 4:
-            self.layer4.log_weights(logger)        
+            for i in range(len(self.layer4)):
+                self.layer4[i].log_weights(logger)    
 
 
 
@@ -134,7 +140,7 @@ class ResNet(nn.Module):
                 norm_layer=norm_layer
             )
         )
-        self.in_channel = channels * block.expansion
+        self.in_channels = channels * block.expansion
         for _ in range(1, num_blocks):
             layers.append(
                 block(
@@ -168,6 +174,9 @@ class ResNet(nn.Module):
         x = self.fc(x)
 
         return x
+
+    def forward(self, x):
+        return self._forward_impl(x)
     
 
 def resnet10(        
