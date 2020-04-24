@@ -27,45 +27,68 @@ def tensor_statistics(
     return tensor_stats
 
 
-def residual_block_statistics(
-    block,
-    name,
-    logger = None
-):
+def basic_block_statistics(block):
     """
-        Given a residual block
+        Given a residual basic block
         calculate its weight statistics
     """
     conv1 = block.conv1
     conv2 = block.conv2
-    conv_short = block.conv_short
+
+    weight = torch.cat(
+        [
+            torch.flatten(conv1.weight), 
+            torch.flatten(conv2.weight)
+        ]
+    )
+    weight_statistics = tensor_statistics(weight)
+
+    grad = torch.cat(
+        [
+            torch.flatten(conv1.weight.grad), 
+            torch.flatten(conv2.weight.grad)
+        ]
+    )
+    grad_statistics = tensor_statistics(grad)
+    residual_block_stats = [weight_statistics, grad_statistics]
+    return residual_block_stats
+
+
+def bottleneck_statistics(block):
+    """
+        Given a residual basic block
+        calculate its weight statistics
+    """
+    conv1 = block.conv1
+    conv2 = block.conv2
+    conv3 = block.conv3
 
     weight = torch.cat(
         [
             torch.flatten(conv1.weight), 
             torch.flatten(conv2.weight),
-            torch.flatten(conv_short.weight)
+            torch.flatten(conv3.weight)
         ]
     )
-    weight_statistics = tensor_statistics(weight)
 
-    bias = torch.cat(
-        [conv1.bias, conv2.bias]
-    )
-    bias_statistics = tensor_statistics(bias)
+    weight_statistics = tensor_statistics(weight)
 
     grad = torch.cat(
         [
             torch.flatten(conv1.weight.grad), 
             torch.flatten(conv2.weight.grad),
-            torch.flatten(conv_short.weight.grad)
+            torch.flatten(conv3.weight.grad)
         ]
     )
+
     grad_statistics = tensor_statistics(grad)
-    residual_block_stats = [weight_statistics, bias_statistics, grad_statistics]
-    if logger is not None:
-        logger.log_conv_statistics(residual_block_stats, name)
+
+    residual_block_stats = [weight_statistics, grad_statistics]
+    
     return residual_block_stats
+
+
+
 
 def conv_statistics(
     conv,

@@ -10,9 +10,8 @@ import torch.nn as nn
 from torch.utils import data
 import numpy as numpy
 from tqdm import tqdm
-from Evolution.model.models.resnet.resnet10_flatten import ResNet10Flatten
+from Evolution.model.models.resnet.resnet import gen_model
 from Evolution.data.CIFAR10.CIFAR10_dataset import CIFAR10Dataset
-from Evolution.utils.weights_understanding.ResNet.resnet10_flatten_weights_understanding import calculate_statistics
 import torch.nn.functional as F
 from sklearn import metrics
 
@@ -26,11 +25,7 @@ class Trainer(object):
         self.basic_config, self.data_config, self.train_config, self.save_config = \
             self.experiment_preparer.get_each_config()
         self.logger = self.experiment_preparer.get_logger()
-        self.model = ResNet10Flatten(
-            in_channels=self.data_config["in_channels"],
-            image_size=self.data_config["image_size"],
-            num_classes=self.data_config["num_classes"]
-        ).to(self.device)
+        self.model = gen_model(self.train_config["model_config"]).to(self.device)
         self.optim = torch.optim.Adam(
             self.model.parameters(),
             lr=self.train_config["learning_config"]["learning_rate"],
@@ -204,12 +199,9 @@ class Trainer(object):
             all_prediction,
             all_loss
         )
+
         if phase == 0:
-            self.logger.log_model_statistics(
-                model=self.model,
-                model_name=self.basic_config["experiment_name"] + "ResNet10_flatten",
-                calculate_statistics=calculate_statistics
-            )
+            self.model.log_weights(self.logger)
         
 
 

@@ -29,8 +29,10 @@ data_config: {
 # Training
 train_config: {
   model_config: {
-    model_type: "ResNet10_Flatten",
-    num_layers: 10
+    model_type: "resnet10",
+    in_channels: 1,
+    image_size: 32,
+    num_classes: 10
   },
   learning_config: {
     start_epoch: 1,

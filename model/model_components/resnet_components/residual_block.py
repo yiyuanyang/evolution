@@ -12,26 +12,30 @@ class BasicBlock(torch.nn.Module):
         Re-implementing a basic residual block for shallow resnet
     """
 
-    def __init__(self, in_channels, out_channels, kernel_size=3, 
-                 stride=1, dilation=1, normalization=None):
+    def __init__(self, in_channels, channels, kernel_size=3, 
+                 stride=1, norm_layer=None):
 
         super(BasicBlock, self).__init__()
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
 
-        assert_downsample(in_channels, out_channels, stride)
+        assert_downsample(in_channels, channels, stride)
 
-        self.conv1 = conv_layer(in_channels, out_channels, kernel_size, stride)
-        self.bn1 = norm_layer(out_channels)
+        self.conv1 = conv_layer(in_channels, channels, kernel_size, stride)
+        self.bn1 = norm_layer(channels)
         self.relu = nn.ReLU(inplace=True)
-        self.conv2 = nn.conv_layer(out_channels, out_channels, kernel_size)
-        self.bn2 = norm_layer(out_channels)
+        self.conv2 = nn.conv_layer(channels, channels, kernel_size)
+        self.bn2 = norm_layer(channels)
 
         if stride !=1 :
-            self.downsample = nn.Sequential(
-                Conv1x1(in_channels, out_channels, stride),
-                norm_layer(out_channels)
+            self.downsample = True
+            self.downsample_block = nn.Sequential(
+                Conv1x1(in_channels, channels, stride),
+                norm_layer(channels)
             )
+
+    def log_weights(self, logger):
+        logger.log_residual_block_statistics(self)
 
     
     def forward(
@@ -47,8 +51,8 @@ class BasicBlock(torch.nn.Module):
         out = self.conv2(out)
         out = self.bn2(out)
         
-        if self.stride != 1:
-            identity = self.downsample(x)
+        if self.downsample:
+            identity = self.downsample_block(x)
 
         out += identity
         out = self.relu(out)
@@ -56,33 +60,42 @@ class BasicBlock(torch.nn.Module):
         return out
 
 
-
 class Bottleneck(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size=3, 
-                 stride=1, dilation=1, norm_layer=None):
+    def __init__(self, in_channels, channels, kernel_size=3, 
+                 stride=1, norm_layer=None):
+            
+        self.expansion = 4
+
         if norm_layer is None:
             norm_layer=nn.BatchNorm2d
-        bottleneck_channels = int(out_channels / 4)
 
-        self.conv1 = Conv1x1(in_channels, bottleneck_channels)
-        self.bn1 = norm_layer(bottleneck_channels)
+        self.conv1 = Conv1x1(in_channels, channels)
+        self.bn1 = norm_layer(channels)
         self.conv2 = conv_layer(
-            in_channels=bottleneck_channels, 
-            out_channels=bottleneck_channels,
-            stride=stride,
-            dilation=dilation)
-        self.bn2 = norm_layer(bottleneck_channels)
-        self.conv3 = Conv1x1(bottleneck_channels, out_channels)
-        self.bn3 = norm_layer(out_channels)
+            in_channels=channels, 
+            out_channels=channels,
+            stride=stride)
+        self.bn2 = norm_layer(channels)
+        self.conv3 = Conv1x1(channels, channels * self.expansion)
+        self.bn3 = norm_layer(channels * self.expansion)
         self.relu = nn.ReLU(inplace=True)
 
         if stride !=1 :
-            self.downsample = nn.Sequential(
-                Conv1x1(in_channels, out_channels, stride),
-                norm_layer(out_channels)
+            self.downsample = True
+            self.downsample_block = nn.Sequential(
+                Conv1x1(
+                    in_channels, 
+                    channels * self.expansion, 
+                    stride
+                ),
+                norm_layer(channels * self.expansion)
             )
         self.stride = stride
-    
+
+    def log_weights(self, logger):
+        logger.log_residual_block_statistics(self)
+
+
     def forward(self, x):
         identity = x
         
@@ -96,7 +109,7 @@ class Bottleneck(nn.Module):
         out = self.bn3(out)
 
         if self.stride != 1:
-            identity = self.downsample(x)
+            identity = self.downsample_block(x)
         
         out += identity
         out = self.relu(out)
@@ -108,15 +121,14 @@ class Bottleneck(nn.Module):
         
 
 
-def conv_layer(in_channels, out_channels, kernel_size=3, stride=1, dilation=1):
+def conv_layer(in_channels, out_channels, kernel_size=3, stride=1):
     return nn.Conv2d(
         in_channels=in_channels, 
         out_channels=out_channels, 
         kernel_size=kernel_size, 
         stride=stride,
-        padding=dilation,
-        bias=False,
-        dilation=dilation)
+        padding=kernel_size//2,
+        bias=False)
 
 def Conv1x1(in_channels, out_channels, stride=1):
     return nn.Conv2d(

@@ -10,6 +10,8 @@ import yaml
 from sklearn import metrics
 import pandas as pd
 import numpy as np
+from Evolution.utils.weights_understanding.func import func
+from Evolution.model.model_components.resnet_components.residual_block import BasicBlock, Bottleneck
 
 class Logger(object):
     def __init__(
@@ -386,22 +388,20 @@ class Logger(object):
         calculate_statistics(model, model_name, self)
 
 
-    def log_conv_statistics(
+    def log_residual_block_statistics(
         self,
-        statistics,
-        name
+        block
     ):
-        weight_statistics, bias_statistics, grad_statistics = statistics
-        self._log("Stats for {name}".format(name=name))
+        if isinstance(block, BasicBlock):
+            self._log("Basicblock: ")
+            weight_statistics, grad_statistics = func.basic_block_statistics(block)
+        elif isinstance(block, Bottleneck):
+            self._log("Bottleneck: ")
+        
         self.log_tensor_statistics(
             weight_statistics, 
             "weight"
         )
-        if bias_statistics is not None:
-            self.log_tensor_statistics(
-                bias_statistics, 
-                "bias  "
-            )
         if grad_statistics is not None:
             self.log_tensor_statistics(
                 grad_statistics, 
