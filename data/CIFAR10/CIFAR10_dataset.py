@@ -5,7 +5,9 @@
 """
 
 import torch
+import torchvision
 from torch.utils.data import Dataset
+from Evolution.data.data_augmentation.image_augmentation import ImageAugmentation is IA
 import pickle
 import numpy as np
 import os
@@ -15,8 +17,9 @@ class CIFAR10Dataset(Dataset):
         Datset for CIFAR 10
     """
 
-    def __init__(self, data_dir_list, image_size):
+    def __init__(self, data_dir_list, augmentation_config = None, image_size = 32):
         self.data_dir_list = data_dir_list
+        self.image_augmentation = IA(augmentation_config)
         self.image_size = image_size
         self.file_names = []
         self.data_dict = {}
@@ -25,14 +28,17 @@ class CIFAR10Dataset(Dataset):
             self.file_names += cur_file_names
             self.data_dict.update(cur_data_dict)
         
+
     def __len__(self):
         return len(self.file_names)
+
 
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
         file_name = self.file_names[idx]
-        return self.data_dict[file_name]
+        return self.image_augmentation.augment_image(self.data_dict[file_name])
+
 
     def _process_batch(self, data_dir):
         """
@@ -59,7 +65,8 @@ class CIFAR10Dataset(Dataset):
             cur_label = labels[index]
             data_dict[name] = (cur_data, cur_label)
         return file_names, data_dict
-            
+
+
     def _decode_image(self, row_image):
         """
         Given a row of numbers, convert it back to a 32 * 32, 3 channel image
@@ -70,5 +77,13 @@ class CIFAR10Dataset(Dataset):
         red = row_image[:length].reshape(32,32)
         green = row_image[length:length * 2].reshape(32,32)
         blue = row_image[length * 2:].reshape(32,32)
-        return np.stack([red, green, blue])
+        return np.stack([red, green, blue], axis = 3)
+
+
+    def _augment_image(self, image):
+        if not self.augmentation_config:
+            return image
+        else:
+
+
         

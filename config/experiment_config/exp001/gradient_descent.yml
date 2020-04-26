@@ -1,9 +1,10 @@
 # Basic Info
 basic_config: {
-  experiment_name: "exp001_gradient_descent_2",
+  experiment_name: "exp001_gradient_descent_lr_0.1_decay_every_20_gamma_0.1_epoch_batch_size_40_resnet10_data_augmentation",
   experiment_performer: "yiyuanyang",
-  experiment_date: "2020-04-24",
+  experiment_date: "2020-04-26",
 }
+
 
 # Data Loading
 data_config: {
@@ -22,9 +23,33 @@ data_config: {
   data_loader_params: {
     shuffle: True,
     num_workers: 8,
-    batch_size: 80
-  }
+    batch_size: 40
+  },
+  augmentation_configs: {
+    ColorJitter: {
+      brightness: 0.7,
+      contrast: 0.7,
+      saturation: 0.4,
+      hue: 0.1
+    },
+    RandomGrayscale: {
+      probability: 0.2
+    },
+    RandomHorizontalFlip: {
+      probability: 0.5
+    },
+    RandomVerticalFlip: {
+      probability: 0.3
+    },
+    RandomAffine: {
+      degrees: 45,
+      translate: [5,5],
+      scale: null,
+      shear: null
+    }
+  },
 }
+
 
 # Training
 train_config: {
@@ -32,23 +57,25 @@ train_config: {
     model_type: "resnet10",
     in_channels: 3,
     image_size: 32,
-    num_classes: 10
+    num_classes: 10,
+    kernel_sizes: [7,3,3,3,3]
   },
   learning_config: {
     start_epoch: 1,
-    max_epoch: 150,
+    max_epoch: 100,
     use_existing_model: False,
     adjust_learning_rate: True,
-    learning_rate: 0.05,
+    learning_rate: 0.1,
     eval_only: False,
     adjust_lr: True,
-    steps: [30,60,90,120,150],
-    gamma: 0.7,
+    steps: [20,40,60,80],
+    gamma: 0.1,
     loss: "cross_entropy",
     gradient_clip: False,
     gradient_clip_value: 1
   }
 }
+
 
 # Logger and model saving
 save_config: {

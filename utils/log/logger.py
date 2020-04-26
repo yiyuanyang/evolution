@@ -8,6 +8,7 @@ import os
 import sys
 import yaml
 from sklearn import metrics
+import json
 import pandas as pd
 import numpy as np
 from Evolution.utils.weights_understanding.func import func
@@ -367,6 +368,28 @@ class Logger(object):
 
         stats_dataframe = pd.DataFrame.from_dict(self.stats[self.phase])
         stats_dataframe.to_csv(self.stat_save_dir[self.phase])
+
+    
+    def load_prior_metrics(self):
+        train_stats = pd.read_csv(self.stat_save_dir[0])
+        eval_stats = pd.read_csv(self.stat_save_dir[1])
+        test_stats = pd.read_csv(self.stat_save_dir[2])
+        prior_metrics = [train_stats, eval_stats, test_stats]
+        for i in range(3):
+            self.stats[i]["epoch"] = prior_metrics["epoch"].tolist()
+            self.stats[i]["global_accuracy"] = prior_metrics["global_accuracy"].tolist()
+            self.stats[i]["accuracy"] = self._json_parse(prior_metrics["accuracy"].tolist())
+            self.stats[i]["global_recall"] = prior_metrics["global_recall"].tolist()
+            self.stats[i]["recall"] = self._json_parse(prior_metrics["recall"].tolist())
+            self.stats[i]["global_precision"] = prior_metrics["global_precision"].tolist()
+            self.stats[i]["precision"] = self._json_parse(prior_metrics["precision"].tolist())
+            self.stats[i]["global_f1"] = prior_metrics["global_f1"].tolist()
+            self.stats[i]["f1"] = self._json_parse(prior_metrics["f1"].tolist())
+            self.stats[i]["loss"] = prior_metrics["loss"].tolist()
+
+    def _json_parse(self, metric_list):
+        metric_list = [json.loads(item) for item in metric_list]
+
 
     # Model Related Logging
     def log_model(

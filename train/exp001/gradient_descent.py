@@ -40,12 +40,10 @@ class Trainer(object):
 
     def load_data(self):
         train_dataset = CIFAR10Dataset(
-            self.data_config["train_data"],
-            self.data_config["image_size"]
+            self.data_config["train_data"]
         )
         eval_dataset = CIFAR10Dataset(
-            self.data_config["eval_data"],
-            self.data_config["image_size"]
+            self.data_config["eval_data"]
         )
         test_dataset = CIFAR10Dataset(
             self.data_config["test_data"],
@@ -113,7 +111,7 @@ class Trainer(object):
                 self.epoch(epoch,0)
                 self.epoch(epoch,1)
                 self.epoch(epoch,2)
-                torch.save(self.model.state_dict, cur_model_path)
+                torch.save(self.model.state_dict(), cur_model_path)
             if learning_config["eval_only"]:
                 self.epoch(epoch,1)
                 self.epoch(epoch,2)

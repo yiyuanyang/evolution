@@ -14,9 +14,12 @@ model_types = ['resnet10', 'resnet18', 'resnet34', 'resnet50']
 
 def gen_model(
     config,
-    kernel_sizes = None, 
     norm_layer=None
 ):
+    if "kernel_sizes" in config.keys():
+        kernel_sizes = config["kernel_sizes"]
+    else:
+        kernel_sizes = None
     model_type = config["model_type"]
     in_channels = config["in_channels"]
     image_size = config["image_size"]
