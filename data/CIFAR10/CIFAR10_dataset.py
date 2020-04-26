@@ -7,7 +7,8 @@
 import torch
 import torchvision
 from torch.utils.data import Dataset
-from Evolution.data.data_augmentation.image_augmentation import ImageAugmentation is IA
+from Evolution.data.data_augmentation.image_augmentation import ImageAugmentor
+from PIL import Image
 import pickle
 import numpy as np
 import os
@@ -19,7 +20,7 @@ class CIFAR10Dataset(Dataset):
 
     def __init__(self, data_dir_list, augmentation_config = None, image_size = 32):
         self.data_dir_list = data_dir_list
-        self.image_augmentation = IA(augmentation_config)
+        self.image_augmentation = ImageAugmentor(augmentation_config)
         self.image_size = image_size
         self.file_names = []
         self.data_dict = {}
@@ -37,7 +38,8 @@ class CIFAR10Dataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
         file_name = self.file_names[idx]
-        return self.image_augmentation.augment_image(self.data_dict[file_name])
+        data_tuple = self.data_dict[file_name]
+        return (np.moveaxis(self.image_augmentation.augment_image(data_tuple[0]), 2, 0), data_tuple[1]) 
 
 
     def _process_batch(self, data_dir):
@@ -77,13 +79,4 @@ class CIFAR10Dataset(Dataset):
         red = row_image[:length].reshape(32,32)
         green = row_image[length:length * 2].reshape(32,32)
         blue = row_image[length * 2:].reshape(32,32)
-        return np.stack([red, green, blue], axis = 3)
-
-
-    def _augment_image(self, image):
-        if not self.augmentation_config:
-            return image
-        else:
-
-
-        
+        return Image.fromarray(np.stack([red, green, blue], axis = 2))

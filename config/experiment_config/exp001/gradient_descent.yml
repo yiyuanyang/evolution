@@ -43,7 +43,7 @@ data_config: {
     },
     RandomAffine: {
       degrees: 45,
-      translate: [5,5],
+      translate: [0.15,0.15],
       scale: null,
       shear: null
     }

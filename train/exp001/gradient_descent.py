@@ -39,17 +39,22 @@ class Trainer(object):
 
 
     def load_data(self):
+        augmentation_configs = self.data_config["augmentation_configs"]
+        data_loader_params = self.data_config["data_loader_params"]
+
         train_dataset = CIFAR10Dataset(
-            self.data_config["train_data"]
+            data_dir_list=self.data_config["train_data"],
+            augmentation_config=augmentation_configs
         )
         eval_dataset = CIFAR10Dataset(
-            self.data_config["eval_data"]
+            data_dir_list=self.data_config["eval_data"],
+            augmentation_config=augmentation_configs
         )
         test_dataset = CIFAR10Dataset(
-            self.data_config["test_data"],
-            self.data_config["image_size"]
+            data_dir_list=self.data_config["test_data"],
+            augmentation_config=augmentation_configs
         )
-        data_loader_params = self.data_config["data_loader_params"]
+
         train_loader = data.DataLoader(
             train_dataset, 
             **data_loader_params)
@@ -61,6 +66,7 @@ class Trainer(object):
             test_dataset,
             **data_loader_params
         )
+        
         self.data_loaders = [train_loader, eval_loader, test_loader]
     
 

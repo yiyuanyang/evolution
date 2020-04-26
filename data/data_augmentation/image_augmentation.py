@@ -6,7 +6,7 @@
 
 from torchvision import transforms as tf
 
-class ImageAugmentation(object):
+class ImageAugmentor(object):
 
     def __init__(self, augmentation_config):
         self.all_processes = []
@@ -36,7 +36,7 @@ class ImageAugmentation(object):
         if "RandomGrayscale" in self.config.keys():
             self.all_processes.append(
                 tf.RandomGrayscale(
-                    p=self.config["RandomGrayScale"]["probability"]
+                    p=self.config["RandomGrayscale"]["probability"]
                 )
             )
 
