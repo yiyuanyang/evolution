@@ -39,7 +39,7 @@ class CIFAR10Dataset(Dataset):
             idx = idx.tolist()
         file_name = self.file_names[idx]
         data_tuple = self.data_dict[file_name]
-        return (np.moveaxis(self.image_augmentation.augment_image(data_tuple[0]), 2, 0), data_tuple[1]) 
+        return (np.moveaxis(np.asarray(self.image_augmentation.augment_image(data_tuple[0])), 2, 0), data_tuple[1]) 
 
 
     def _process_batch(self, data_dir):

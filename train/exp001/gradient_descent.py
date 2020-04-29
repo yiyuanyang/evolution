@@ -48,11 +48,11 @@ class Trainer(object):
         )
         eval_dataset = CIFAR10Dataset(
             data_dir_list=self.data_config["eval_data"],
-            augmentation_config=augmentation_configs
+            augmentation_config=None
         )
         test_dataset = CIFAR10Dataset(
             data_dir_list=self.data_config["test_data"],
-            augmentation_config=augmentation_configs
+            augmentation_config=None
         )
 
         train_loader = data.DataLoader(
@@ -66,7 +66,7 @@ class Trainer(object):
             test_dataset,
             **data_loader_params
         )
-        
+
         self.data_loaders = [train_loader, eval_loader, test_loader]
     
 

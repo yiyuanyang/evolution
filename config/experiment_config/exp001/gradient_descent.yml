@@ -1,6 +1,6 @@
 # Basic Info
 basic_config: {
-  experiment_name: "exp001_gradient_descent_lr_0.1_decay_every_20_gamma_0.1_epoch_batch_size_40_resnet10_data_augmentation",
+  experiment_name: "exp001_gradient_descent_lr_0.05_decay_every_40_gamma_0.5_epoch_batch_size_40_resnet18_data_augmentation_3",
   experiment_performer: "yiyuanyang",
   experiment_date: "2020-04-26",
 }
@@ -27,23 +27,23 @@ data_config: {
   },
   augmentation_configs: {
     ColorJitter: {
-      brightness: 0.7,
-      contrast: 0.7,
-      saturation: 0.4,
-      hue: 0.1
+      brightness: 0.5,
+      contrast: 0.3,
+      saturation: 0.5,
+      hue: 0.05
     },
     RandomGrayscale: {
       probability: 0.2
     },
     RandomHorizontalFlip: {
-      probability: 0.5
-    },
-    RandomVerticalFlip: {
       probability: 0.3
     },
+    RandomVerticalFlip: {
+      probability: 0.2
+    },
     RandomAffine: {
-      degrees: 45,
-      translate: [0.15,0.15],
+      degrees: 10,
+      translate: [0.1,0.1],
       scale: null,
       shear: null
     }
@@ -54,22 +54,22 @@ data_config: {
 # Training
 train_config: {
   model_config: {
-    model_type: "resnet10",
+    model_type: "resnet18",
     in_channels: 3,
     image_size: 32,
     num_classes: 10,
     kernel_sizes: [7,3,3,3,3]
   },
   learning_config: {
-    start_epoch: 1,
+    start_epoch: 40,
     max_epoch: 100,
-    use_existing_model: False,
+    use_existing_model: True,
     adjust_learning_rate: True,
-    learning_rate: 0.1,
+    learning_rate: 0.05,
     eval_only: False,
     adjust_lr: True,
-    steps: [20,40,60,80],
-    gamma: 0.1,
+    steps: [40,80,120,160],
+    gamma: 0.5,
     loss: "cross_entropy",
     gradient_clip: False,
     gradient_clip_value: 1
