@@ -65,14 +65,16 @@ train_config: {
   },
 
   evolution_config: {
-    start_round: 1,
-    max_rounds: 50,
     start_epoch: 1,
+    max_rounds: 50,
     epoch_per_round: 5,
     num_models: 50,
+    use_existing_models: False,
+    cur_model_id: 0,
     load_from_models: False,
     elimination_rate: 20,
-    max_round_per_model: 4,
+    max_age_per_model: 4, # This is in rounds
+    max_shield_per_model: 20, # This is in epochs
     mutation_policy: "average",
     random_seed: 10,
     max_weight_deviation: 0.05,
@@ -95,7 +97,7 @@ train_config: {
 
 # Logger and model saving
 save_config: {
-  save_dir: "E:\\saved_experiments\\evolution", 
+  model_save_dir: "E:\\saved_experiments\\evolution", 
   use_logger: True,
   dump_frequency: 10,
   log_frequency: 200,

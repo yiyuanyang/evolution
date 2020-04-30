@@ -176,7 +176,7 @@ class Logger(object):
     def log_batch_result(
         self, 
         batch_index,
-        total_batches,
+        num_batches,
         prediction_prob,
         prediction,
         ground_truth,
@@ -315,11 +315,7 @@ class Logger(object):
         
         self._log(log=log)
 
-
-    def log_epoch_metrics(self, epoch, ground_truth, prediction, loss):
-        """
-            Perform all metrics
-        """
+    def _log_epoch_metrics(self, epoch, ground_truth, prediction, loss):
         ground_truth = [int(item) for item in ground_truth]
         prediction = [int(item) for item in prediction]
 
@@ -354,6 +350,17 @@ class Logger(object):
             ground_truth,
             prediction
         )
+        return global_accuracy, accuracy, global_recall, recall, \
+            global_precision, precision, global_f1, f1, global_loss
+
+
+    def log_epoch_metrics(self, epoch, ground_truth, prediction, loss):
+        """
+            Perform all metrics
+        """
+        global_accuracy, accuracy, global_recall, recall, \
+            global_precision, precision, global_f1, f1, global_loss = \
+            self._log_epoch_metrics(self, epoch, ground_truth, prediction, loss)
 
         self.stats[self.phase]["epoch"].append(epoch)
         self.stats[self.phase]["global_accuracy"].append(global_accuracy)
@@ -388,7 +395,7 @@ class Logger(object):
             self.stats[i]["loss"] = prior_metrics["loss"].tolist()
 
     def _json_parse(self, metric_list):
-        metric_list = [json.loads(item) for item in metric_list]
+        return [json.loads(item) for item in metric_list]
 
 
     # Model Related Logging

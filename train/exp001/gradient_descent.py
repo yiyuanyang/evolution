@@ -194,7 +194,7 @@ class Trainer(object):
             if phase == 0 and batch_index % self.save_config["log_frequency"]==0:
                 self.logger.log_batch_result(
                     batch_index=batch_index,
-                    total_batches=len(self.data_loaders[phase]),
+                    num_batches=len(self.data_loaders[phase]),
                     prediction_prob=prediction_prob,
                     prediction=prediction,
                     ground_truth=ground_truth,
