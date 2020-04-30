@@ -18,7 +18,9 @@ from sklearn import metrics
 
 
 class Trainer(object):
-
+    """
+        This is for gradient descent
+    """
     def __init__(self, experiment_preparer):
         self.device = torch.device("cuda")
         self.experiment_preparer = experiment_preparer
@@ -109,15 +111,21 @@ class Trainer(object):
             cur_model_name = "epoch_{}.pt".format(int(epoch))
             cur_model_path = os.path.join(
                 self.save_config["model_save_dir"],
-                cur_model_name
+                "model_" + cur_model_name
+            )
+            cur_optim_path = os.path.join(
+                self.save_config["model_save_dir"],
+                "optim_" + cur_model_name
             )
             if os.path.exists(cur_model_path) and learning_config["use_existing_model"]:
                 self.model.load_state_dict(torch.load(cur_model_path))
+                self.optim.load_state_dict(torch.load(cur_optim_path))
             else:
                 self.epoch(epoch,0)
                 self.epoch(epoch,1)
                 self.epoch(epoch,2)
                 torch.save(self.model.state_dict(), cur_model_path)
+                torch.save(self.optim.state_dict(), cur_optim_path)
             if learning_config["eval_only"]:
                 self.epoch(epoch,1)
                 self.epoch(epoch,2)

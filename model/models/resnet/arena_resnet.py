@@ -8,6 +8,7 @@ import torch
 import torch.nn as nn
 from Evolution.model.model_components.resnet_components.residual_block import BasicBlock, Bottleneck
 from Evolution.survival.breed import model_breeding
+from Evolution.utils.lineage.lineage_tree import Lineage
 import copy
 
 
@@ -15,67 +16,99 @@ model_types = ['resnet10', 'resnet18', 'resnet34', 'resnet50']
 
 
 def gen_model(
-    config,
-    norm_layer=None
+    model_config,
+    model_status_config = None
 ):
-    if "kernel_sizes" in config.keys():
-        kernel_sizes = config["kernel_sizes"]
-    else:
-        kernel_sizes = None
-    model_type = config["model_type"]
-    in_channels = config["in_channels"]
-    image_size = config["image_size"]
-    num_classes = config["num_classes"]
+    if model_status_config is None:
+        print("Generating Initial Dummy Model")
+        model_status_config = gen_model_status_config()
+    if "kernel_sizes" not in model_config.keys():
+        model_config["kernel_sizes"] = None
+    if "norm_layer" not in model_config.keys():
+        model_config["norm_layer"] = None
+
+    model_type = model_config["model_type"]
     if model_type == 'resnet10':
-        return resnet10(in_channels, image_size, num_classes, kernel_sizes, norm_layer)
+        return resnet10(model_config, model_status_config)
     elif model_type == 'resnet18':
-        return resnet18(in_channels, image_size, num_classes, kernel_sizes, norm_layer)
+        return resnet18(model_config, model_status_config)
     elif model_type == 'resnet34':
-        return resnet34(in_channels, image_size, num_classes, kernel_sizes, norm_layer)
+        return resnet34(model_config, model_status_config)
     elif model_type == 'resnet50':
-        return resnet50(in_channels, image_size, num_classes, kernel_sizes, norm_layer)
+        return resnet50(model_config, model_status_config)
 
 
-evo_config_sample = {
-    "model_id": 0, # Unique ID for this model in the arena
-    "lineage": [], # Record the two parents of the model 
-}
+def gen_model_config(
+    block,
+    layers,
+    in_channels,
+    image_size,
+    num_classes,
+    kernel_sizes,
+    norm_layer
+):
+    return {
+        "block": block,
+        "layers": layers, 
+        "in_channels": in_channels,
+        "image_size": image_size,
+        "num_classes": num_classes,
+        "kernel_sizes": kernel_sizes,
+        "norm_layer": norm_layer
+    }
+
+
+def gen_model_status_config(
+    initial_model = True,
+    model_id = 0, # if there has been 400 models existed during evolution, which one is this?
+    arena_id = 0, # if there are say 100 total models in arena, which one is this?
+    lineage = [None, None],
+    age = 0
+):
+    return {
+        "initial_model": initial_model, 
+        "model_id": model_id,
+        "lineage": lineage, 
+        "age": age
+    }
 
 
 class ResNet(nn.Module):
 
     def __init__(
         self, 
-        block, 
-        layers, 
-        in_channels,
-        image_size,
-        num_classes, 
-        kernel_sizes,
-        norm_layer=None
-        evo_config=None):
-
-        assert evo_config is not None, "Arena ResNet Requires Its Evolution Configuration"
-
+        model_config,
+        model_status_config
+    ):
         super(ResNet, self).__init__()
+        self._init_config(model_config, model_status_config)
+        self._init_model()
 
-        self.block = block
-        self.layers = layers
-        self.in_channels = in_channels
-        self.image_size = image_size
-        self.num_classes = num_classes
-        self.kernel_sizes = kernel_sizes
-        self.norm_layer = norm_layer
-        self.parents = parents
-        self.model_id = model_id
-        if kernel_sizes is None:
-            kernel_sizes = [7,3,3,3,3]
-        if norm_layer is None:
-            norm_layer = nn.BatchNorm2d
 
+    def _init_config(self, model_config, model_status_config):
+        # Apply the model config
+        self.block = model_config["block"]
+        self.layers = model_config["layers"]
+        self.in_channels = model_config["in_channels"]
+        self.image_size = model_config["image_size"]
+        self.num_classes = model_config["num_classes"]
+        self.kernel_sizes = model_config["kernel_sizes"]
+        self.norm_layer = model_config["norm_layer"]
+        if self.kernel_sizes is None:
+            self.kernel_sizes = [7,3,3,3,3]
+        if self.norm_layer is None:
+            self.norm_layer = nn.BatchNorm2d
+
+        # Apply the evolution status config
+        self.initial_model = model_status_config["initial_model"]
+        self.model_id = model_status_config["model_id"]
+        self.Lineage = Lineage(self.model_id, model_status_config["lineage"][0], model_status_config["lineage"][1])
+        self.age = model_status_config["age"]
+
+
+    def _init_model(self):
         self.dynamic_in_channels = 64
-        
-        if not skeleton_only:
+        if self.model_status_config["initial_model"]:
             self.conv1 = nn.Conv2d(
                 self.in_channels, 
                 self.dynamic_in_channels, 
@@ -83,7 +116,7 @@ class ResNet(nn.Module):
                 stride=2,
                 padding = self.kernel_sizes[0] // 2,
                 bias = False)
-            self.bn1 = norm_layer(self.dynamic_in_channels)
+            self.bn1 = self.norm_layer(self.dynamic_in_channels)
             self.relu = nn.ReLU(inplace = True)
             self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
             self.layer1 = self._make_layer(
@@ -115,31 +148,48 @@ class ResNet(nn.Module):
                 stride=2
             )
             self.avgpool = nn.AdaptiveAvgPool2d((1,1))
-            self.fc = nn.Linear(512 * block.expansion, self.num_classes)
+            self.fc = nn.Linear(512 * self.block.expansion, self.num_classes)
 
             for m in self.modules():
                 if isinstance(m, nn.Conv2d):
                     nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
 
 
-    def breed_net(self, other_net, new_model_id, policy = "average"):
+    def breed_net(
+        self, 
+        other_net, 
+        new_model_id,
+        logger, 
+        policy = "average"
+    ):
         """
             Given a right hand side net, breed a new net that with some policy,
             combines the two
         """
         with torch.no_grad():
-            new_net = ResNet(
-                block=self.block, 
-                layers=self.layers, 
-                in_channels=self.in_channels,
-                image_size=self.image_size,
-                num_classes=self.num_classes, 
-                kernel_sizes=self.kernel_sizes,
-                norm_layer=self.norm_layer,
-                skeleton_only=True,
-                parents=copy.deepcopy(self.parents).append(self.model_id),
-                model_id=new_model_id
+
+            model_config = gen_model_config(
+                self.block, 
+                self.layers, 
+                self.in_channels, 
+                self.image_size, 
+                self.num_classes, 
+                self.kernel_sizes, 
+                self.norm_layer
             )
+
+            model_status_config = gen_model_status_config(
+                False, # If breeding, its not one of the initial nets
+                new_model_id,
+                [self.lineage, other_net.lineage], # Its own lineage and other nets' lineage
+                0 # Age zero
+            )
+
+            new_net = ResNet(
+                model_config,
+                model_status_config
+            )
+
             new_net.conv1 = model_breeding.breed_conv(
                 left_conv=self.conv1,
                 right_conv=other_net.conv1,
@@ -152,10 +202,9 @@ class ResNet(nn.Module):
             new_net.layer4 = self.layer1.breed(other_block=other_net.layer4, policy=policy)
             new_net.avgpool = nn.AdaptiveAvgPool2d((1,1))
             new_net.fc = nn.Linear(512 * self.block.expansion, self.num_classes)
+            
+            logger.log_breed(self.model_id, other_net.model_id, new_model_id)
             return new_net
-
-
-
 
 
     def log_weights(self, logger):
@@ -224,71 +273,51 @@ class ResNet(nn.Module):
     
 
 def resnet10(        
-    in_channels,
-    image_size,
-    num_classes, 
-    kernel_sizes = None, 
-    norm_layer=None
+    model_config,
+    model_status_config
 ):
+    model_config["block"] = BasicBlock
+    model_config["layers"] = [1,1,1,1]
     return ResNet(
-        block=BasicBlock, 
-        layers=[1,1,1,1],
-        in_channels=in_channels,
-        image_size=image_size,
-        num_classes=num_classes,
-        kernel_sizes=kernel_sizes,
-        norm_layer=norm_layer)
+        model_config,
+        model_status_config
+    )
 
 
 def resnet18(        
-    in_channels,
-    image_size,
-    num_classes, 
-    kernel_sizes = None, 
-    norm_layer=None
+    model_config,
+    model_status_config
 ):
+    model_config["block"] = BasicBlock
+    model_config["layers"] = [2,2,2,2]
     return ResNet(
-        block=BasicBlock, 
-        layers=[2,2,2,2],
-        in_channels=in_channels,
-        image_size=image_size,
-        num_classes=num_classes,
-        kernel_sizes=kernel_sizes,
-        norm_layer=norm_layer)
+        model_config,
+        model_status_config
+    )
 
 
 def resnet34(        
-    in_channels,
-    image_size,
-    num_classes, 
-    kernel_sizes = None, 
-    norm_layer=None
+    model_config,
+    model_status_config
 ):
+    model_config["block"] = BasicBlock
+    model_config["layers"] = [3,4,6,3]
     return ResNet(
-        block=BasicBlock, 
-        layers=[3,4,6,3],
-        in_channels=in_channels,
-        image_size=image_size,
-        num_classes=num_classes,
-        kernel_sizes=kernel_sizes,
-        norm_layer=norm_layer)
+        model_config,
+        model_status_config
+    )
 
 
 def resnet50(        
-    in_channels,
-    image_size,
-    num_classes, 
-    kernel_sizes = None, 
-    norm_layer=None
+    model_config,
+    model_status_config
 ):
+    model_config["block"] = Bottleneck
+    model_config["layers"] = [3,4,6,3]
     return ResNet(
-        block=Bottleneck, 
-        layers=[3,4,6,3],
-        in_channels=in_channels,
-        image_size=image_size,
-        num_classes=num_classes,
-        kernel_sizes=kernel_sizes,
-        norm_layer=norm_layer)
+        model_config,
+        model_status_config
+    )
 
 
         

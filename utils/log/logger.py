@@ -449,6 +449,14 @@ class Logger(object):
         self._log(msg)
 
 
+    def log_breed(self, model_id_one, model_id_two, new_model_id):
+        self._log("Model {model_id_one} and {model_id_two} generated {new_model_id}".format(
+            model_id_one=model_id_one,
+            model_id_two=model_id_two,
+            new_model_id=new_model_id
+        ))
+
+
     def round_to_4_decimal(
         self, 
         stats

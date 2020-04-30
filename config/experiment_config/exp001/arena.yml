@@ -20,12 +20,14 @@ data_config: {
   in_channels: 3,
   image_size: 32,
   num_classes: 10,
-  data_loader_params: {
+
+  data_loader_config: {
     shuffle: True,
     num_workers: 8,
     batch_size: 40
   },
-  augmentation_configs: {
+
+  augmentation_config: {
     ColorJitter: {
       brightness: 0.5,
       contrast: 0.3,
@@ -47,7 +49,8 @@ data_config: {
       scale: null,
       shear: null
     }
-  },
+  }
+
 }
 
 
@@ -60,36 +63,33 @@ train_config: {
     num_classes: 10,
     kernel_sizes: [7,3,3,3,3]
   },
-  learning_config: {
-    
-    initialization_config: {
-      start_epoch: 1,
-      max_epoch: 200,
-      models_present: False
-    },
 
-    competition_config: {
-      epochs_per_competition: 5,
-      max_epoch_per_model: 20
-    },
+  evolution_config: {
+    start_round: 1,
+    max_rounds: 50,
+    start_epoch: 1,
+    epoch_per_round: 5,
+    num_models: 100,
+    load_from_models: False,
+    elimination_rate: 20,
+    max_round_per_model: 4,
+    mutation_policy: "average",
+    random_seed: 10,
+    max_weight_deviation: 0.05,
+    breed_intention_rate: 0.5, # Each model has a 50% chance of breeding if given the opportunity
+    downward_acceptance: 6 # Only consider to breed with next six models with equal probability
+  },
 
-    learning_rate_config: {
-      adjust_learning_rate: True,
-      learning_rate: 0.05,
-      adjust_lr: True,
-      epochs_per_adjustment: 20,
-      gamma: 0.97
-    },
-
-
-    loss_bp_config: {
-      loss: "cross_entropy",
-      gradient_clip: False,
-      gradient_clip_value: 1
-    },
-
+  backprop_config: {  
+    adjust_learning_rate: True,
+    learning_rate: 0.05,
+    adjust_lr: True,
+    gamma: 0.98,
+    loss: "cross_entropy",
+    gradient_clip: False,
+    gradient_clip_value: 1,
     eval_only: False,
-  }
+  },
 }
 
 
