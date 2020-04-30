@@ -15,13 +15,7 @@ import copy
 model_types = ['resnet10', 'resnet18', 'resnet34', 'resnet50']
 
 
-def gen_model(
-    model_config,
-    model_status_config = None
-):
-    if model_status_config is None:
-        print("Generating Initial Dummy Model")
-        model_status_config = gen_model_status_config()
+def gen_model(model_config):
     if "kernel_sizes" not in model_config.keys():
         model_config["kernel_sizes"] = None
     if "norm_layer" not in model_config.keys():
@@ -29,13 +23,13 @@ def gen_model(
 
     model_type = model_config["model_type"]
     if model_type == 'resnet10':
-        return resnet10(model_config, model_status_config)
+        return resnet10(model_config)
     elif model_type == 'resnet18':
-        return resnet18(model_config, model_status_config)
+        return resnet18(model_config)
     elif model_type == 'resnet34':
-        return resnet34(model_config, model_status_config)
+        return resnet34(model_config)
     elif model_type == 'resnet50':
-        return resnet50(model_config, model_status_config)
+        return resnet50(model_config)
 
 
 def gen_model_config(
@@ -77,15 +71,14 @@ class ResNet(nn.Module):
 
     def __init__(
         self, 
-        model_config,
-        model_status_config
+        model_config
     ):
         super(ResNet, self).__init__()
-        self._init_config(model_config, model_status_config)
+        self._init_config(model_config)
         self._init_model()
 
 
-    def _init_config(self, model_config, model_status_config):
+    def _init_config(self, model_config):
         # Apply the model config
         self.block = model_config["block"]
         self.layers = model_config["layers"]
@@ -99,60 +92,53 @@ class ResNet(nn.Module):
         if self.norm_layer is None:
             self.norm_layer = nn.BatchNorm2d
 
-        # Apply the evolution status config
-        self.initial_model = model_status_config["initial_model"]
-        self.model_id = model_status_config["model_id"]
-        self.Lineage = Lineage(self.model_id, model_status_config["lineage"][0], model_status_config["lineage"][1])
-        self.age = model_status_config["age"]
-
 
     def _init_model(self):
         self.dynamic_in_channels = 64
-        if self.model_status_config["initial_model"]:
-            self.conv1 = nn.Conv2d(
-                self.in_channels, 
-                self.dynamic_in_channels, 
-                self.kernel_sizes[0],
-                stride=2,
-                padding = self.kernel_sizes[0] // 2,
-                bias = False)
-            self.bn1 = self.norm_layer(self.dynamic_in_channels)
-            self.relu = nn.ReLU(inplace = True)
-            self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-            self.layer1 = self._make_layer(
-                block=self.block, 
-                channels=64, 
-                num_blocks=self.layers[0],
-                kernel_size=self.kernel_sizes[1],
-                stride=1
-            )
-            self.layer2 = self._make_layer(
-                block=self.block, 
-                channels=128, 
-                num_blocks=self.layers[1],
-                kernel_size=self.kernel_sizes[2],
-                stride=2
-            )
-            self.layer3 = self._make_layer(
-                block=self.block, 
-                channels=256, 
-                num_blocks=self.layers[2],
-                kernel_size=self.kernel_sizes[3],
-                stride=2
-            )
-            self.layer4 = self._make_layer(
-                block=self.block, 
-                channels=512, 
-                num_blocks=self.layers[3],
-                kernel_size=self.kernel_sizes[4],
-                stride=2
-            )
-            self.avgpool = nn.AdaptiveAvgPool2d((1,1))
-            self.fc = nn.Linear(512 * self.block.expansion, self.num_classes)
+        self.conv1 = nn.Conv2d(
+            self.in_channels, 
+            self.dynamic_in_channels, 
+            self.kernel_sizes[0],
+            stride=2,
+            padding = self.kernel_sizes[0] // 2,
+            bias = False)
+        self.bn1 = self.norm_layer(self.dynamic_in_channels)
+        self.relu = nn.ReLU(inplace = True)
+        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        self.layer1 = self._make_layer(
+            block=self.block, 
+            channels=64, 
+            num_blocks=self.layers[0],
+            kernel_size=self.kernel_sizes[1],
+            stride=1
+        )
+        self.layer2 = self._make_layer(
+            block=self.block, 
+            channels=128, 
+            num_blocks=self.layers[1],
+            kernel_size=self.kernel_sizes[2],
+            stride=2
+        )
+        self.layer3 = self._make_layer(
+            block=self.block, 
+            channels=256, 
+            num_blocks=self.layers[2],
+            kernel_size=self.kernel_sizes[3],
+            stride=2
+        )
+        self.layer4 = self._make_layer(
+            block=self.block, 
+            channels=512, 
+            num_blocks=self.layers[3],
+            kernel_size=self.kernel_sizes[4],
+            stride=2
+        )
+        self.avgpool = nn.AdaptiveAvgPool2d((1,1))
+        self.fc = nn.Linear(512 * self.block.expansion, self.num_classes)
 
-            for m in self.modules():
-                if isinstance(m, nn.Conv2d):
-                    nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
 
 
     def breed_net(
@@ -178,33 +164,21 @@ class ResNet(nn.Module):
                 self.norm_layer
             )
 
-            model_status_config = gen_model_status_config(
-                False, # If breeding, its not one of the initial nets
-                new_model_id,
-                [self.lineage, other_net.lineage], # Its own lineage and other nets' lineage
-                0 # Age zero
-            )
-
-            new_net = ResNet(
-                model_config,
-                model_status_config
-            )
-
-            new_net.conv1 = model_breeding.breed_conv(
+            self.conv1 = model_breeding.breed_conv(
                 left_conv=self.conv1,
                 right_conv=other_net.conv1,
                 in_channels=self.in_channels,
                 out_channels=64
             )
-            new_net.layer1 = self.layer1.breed(other_block=other_net.layer1, policy=policy)
-            new_net.layer2 = self.layer1.breed(other_block=other_net.layer2, policy=policy)
-            new_net.layer3 = self.layer1.breed(other_block=other_net.layer3, policy=policy)
-            new_net.layer4 = self.layer1.breed(other_block=other_net.layer4, policy=policy)
-            new_net.avgpool = nn.AdaptiveAvgPool2d((1,1))
-            new_net.fc = nn.Linear(512 * self.block.expansion, self.num_classes)
+            self.layer1 = self.layer1.breed(other_block=other_net.layer1, policy=policy)
+            self.layer2 = self.layer1.breed(other_block=other_net.layer2, policy=policy)
+            self.layer3 = self.layer1.breed(other_block=other_net.layer3, policy=policy)
+            self.layer4 = self.layer1.breed(other_block=other_net.layer4, policy=policy)
+            self.avgpool = nn.AdaptiveAvgPool2d((1,1))
+            self.fc = nn.Linear(512 * self.block.expansion, self.num_classes)
             
             logger.log_breed(self.model_id, other_net.model_id, new_model_id)
-            return new_net
+            return self
 
 
     def log_weights(self, logger):
@@ -272,52 +246,28 @@ class ResNet(nn.Module):
         return self._forward_impl(x)
     
 
-def resnet10(        
-    model_config,
-    model_status_config
-):
+def resnet10(model_config):
     model_config["block"] = BasicBlock
     model_config["layers"] = [1,1,1,1]
-    return ResNet(
-        model_config,
-        model_status_config
-    )
+    return ResNet(model_config)
 
 
-def resnet18(        
-    model_config,
-    model_status_config
-):
+def resnet18(model_config):
     model_config["block"] = BasicBlock
     model_config["layers"] = [2,2,2,2]
-    return ResNet(
-        model_config,
-        model_status_config
-    )
+    return ResNet(model_config)
 
 
-def resnet34(        
-    model_config,
-    model_status_config
-):
+def resnet34(model_config):
     model_config["block"] = BasicBlock
     model_config["layers"] = [3,4,6,3]
-    return ResNet(
-        model_config,
-        model_status_config
-    )
+    return ResNet(model_config)
 
 
-def resnet50(        
-    model_config,
-    model_status_config
-):
+def resnet50(model_config):
     model_config["block"] = Bottleneck
     model_config["layers"] = [3,4,6,3]
-    return ResNet(
-        model_config,
-        model_status_config
-    )
+    return ResNet(model_config)
 
 
         

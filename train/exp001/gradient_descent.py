@@ -142,8 +142,6 @@ class Trainer(object):
         """
         if phase == 0:
             self.model.train()
-        elif phase == 1:
-            self.model.eval()
         else:
             self.model.eval()
         

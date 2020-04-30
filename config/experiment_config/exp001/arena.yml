@@ -69,7 +69,7 @@ train_config: {
     max_rounds: 50,
     start_epoch: 1,
     epoch_per_round: 5,
-    num_models: 100,
+    num_models: 50,
     load_from_models: False,
     elimination_rate: 20,
     max_round_per_model: 4,
