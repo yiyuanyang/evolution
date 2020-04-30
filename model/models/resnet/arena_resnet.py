@@ -144,40 +144,38 @@ class ResNet(nn.Module):
     def breed_net(
         self, 
         other_net, 
-        new_model_id,
-        logger, 
-        policy = "average"
+        policy = "average",
+        max_weight_deviation = None # Not yet implemented
     ):
         """
             Given a right hand side net, breed a new net that with some policy,
             combines the two
         """
         with torch.no_grad():
-
-            model_config = gen_model_config(
-                self.block, 
-                self.layers, 
-                self.in_channels, 
-                self.image_size, 
-                self.num_classes, 
-                self.kernel_sizes, 
-                self.norm_layer
-            )
-
+            temp = self.conv1
             self.conv1 = model_breeding.breed_conv(
                 left_conv=self.conv1,
                 right_conv=other_net.conv1,
                 in_channels=self.in_channels,
                 out_channels=64
             )
+            del temp
+            temp = self.layer1
             self.layer1 = self.layer1.breed(other_block=other_net.layer1, policy=policy)
+            del temp
+            temp = self.layer2
             self.layer2 = self.layer1.breed(other_block=other_net.layer2, policy=policy)
+            del temp
+            temp = self.layer3
             self.layer3 = self.layer1.breed(other_block=other_net.layer3, policy=policy)
+            del temp
+            temp = self.layer4
             self.layer4 = self.layer1.breed(other_block=other_net.layer4, policy=policy)
-            self.avgpool = nn.AdaptiveAvgPool2d((1,1))
-            self.fc = nn.Linear(512 * self.block.expansion, self.num_classes)
-            
-            logger.log_breed(self.model_id, other_net.model_id, new_model_id)
+            del temp
+
+            # We are not changing the fully connected layer
+            #self.avgpool = nn.AdaptiveAvgPool2d((1,1))
+            #self.fc = nn.Linear(512 * self.block.expansion, self.num_classes)
             return self
 
 

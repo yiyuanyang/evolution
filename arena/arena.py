@@ -72,18 +72,25 @@ class ModelCandidate(object):
         torch.manual_seed(self.config["random_seed"])
         np.random.seed(self.config["random_seed"])
 
-    def save_snapshot(self, epoch):
+    def save_model(self, epoch):
         assert self.model is not None and self.optim is not None, "Cannot Save Non Existent Model and Optimizer"
         model_save_dir = os.path.join(self.save_dir, str(epoch) + "_model.pt")
         optim_save_dir = os.path.join(self.save_dir, str(epoch) + "_optim.pt")
-        config_save_dir = os.path.join(self.save_dir, str(epoch) + "_config.pickle")
-        arena_save_dir = os.path.join(self.arena_save_dir, str(self.config["arena_id"]) + "_config.pickle")
         torch.save(self.model.state_dict(), model_save_dir)
         torch.save(self.optim.state_dict(), optim_save_dir)
+
+    def save_config(self, epoch):
+        config_save_dir = os.path.join(self.save_dir, str(epoch) + "_config.pickle")
+        arena_save_dir = os.path.join(self.arena_save_dir, str(self.config["arena_id"]) + "_config.pickle")
+
         with open(config_save_dir, "wb") as handle: # Save a copy in the model's own folder
             pickle.dump(self.config, handle, protocol=pickle.HIGHEST_PROTOCOL)
         with open(arena_save_dir, "wb") as handle: # Save a copy in the arena
             pickle.dump(self.config, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    def save_snapshot(self, epoch):
+        self.save_model(epoch)
+        self.save_config(epoch)
 
     def free_memory(self):
         with torch.no_grad():
@@ -205,6 +212,23 @@ class ModelCandidate(object):
         loss = loss.data.cpu().numpy().tolist()
         return prediction_prob, prediction, ground_truth, loss
 
+
+    def breed(
+        self, 
+        other_candidate, 
+        epoch,
+        new_model_id, 
+        save_path, 
+        logger,
+        mutation_policy = "average",
+        max_weight_deviation = 0.05,
+    ):
+        self.model.breed_net(other_candidate.model, mutation_policy, max_weight_deviation)
+        torch.save(self.model.state_dict(), os.path.join(save_path, str(epoch) + "_model.pt"))
+        torch.save(self.optim.state_dict(), os.path.join(save_path), str(epoch) + "_optim.pt")
+        logger.log_breed(self.model_id(), other_candidate.model_id(), new_model_id)
+
+
     def arena_id(self):
         return self.config["arena_id"]
     
@@ -220,6 +244,14 @@ class ModelCandidate(object):
     def accuracy(self, epoch):
         return self.config["epoch_to_accuracy"][epoch]
 
+    def lineage(self):
+        return self.config["lineage"]
+
+    def set_model(self, model, optim, learning_rate):
+        self.model = model
+        self.optim = optim
+        self.learning_rate 
+
         
 
 class Arena(object):
@@ -227,7 +259,10 @@ class Arena(object):
         self.data_loaders = data_loaders
         self.train_config = train_config
         self.save_config = save_config
+        self.model_config = train_config["evolution_config"]
+        self.backprop_config = train_config["backprop_config"]
         self.evolution_config = train_config["evolution_config"]
+        self.init_evolution_config(self.evolution_config)
         self.model_candidates = {}
         self.model_candidate_config_paths = {}
         self.model_save_dir = os.path.join(self.save_config["model_save_dir"], "all_models")
@@ -262,7 +297,6 @@ class Arena(object):
                 self.model_candidates[i] = ModelCandidate(cur_config)
                 self.new_model_id = self.evolution_config["num_models"]
 
-
     def gen_new_model_id(self):
         model_id = self.new_model_id
         self.new_model_id += 1
@@ -271,7 +305,6 @@ class Arena(object):
     def end_of_round_update(self):
         survived = self.eliminate()
         self.breed(survived)
-
 
     def get_model_ids(self):
         return [model_candidate.model_id() for model_candidate in self.model_candidates]
@@ -301,15 +334,16 @@ class Arena(object):
         self.elimination_rate = evolution_config["elimination_rate"]
         self.mutation_policy = evolution_config["mutation_policy"]
         self.random_seed = evolution_config["random_seed"]
+        self.shield = evolution_config["shield"]
         self.max_weight_deviation = evolution_config["max_weight_deviation"]
         self.breed_intention_rate = evolution_config["breed_intention_rate"]
         self.downward_acceptance = evolution_config["downward_acceptance"]
         self.max_rounds = evolution_config["max_rounds"]
 
-        self.cur_round = evolution_config["start_round"]
-        self.cur_epoch = evolution_config["start_epoch"]
-        self.cur_arena_id = 0
-
+        self.round = evolution_config["start_round"]
+        self.epoch = evolution_config["start_epoch"]
+        self.round = self.epoch // self.epoch_per_round + 1
+        self.cur_arena_id = evolution_config["cur_arena_id"]
 
     def eliminate(self):
         performance = self.get_performance()
@@ -337,14 +371,51 @@ class Arena(object):
         # TODO: Write load model functions 
 
 
-    def _breed(self, parent_arena_id_1, parent_arena_id_2, target_arena_id):
+    def _breed(
+        self, 
+        parent_arena_id_1, 
+        parent_arena_id_2, 
+        target_arena_id,
+        logger
+    ):
         self.model_candidates[parent_arena_id_1].init_model()
         self.model_candidates[parent_arena_id_1].load_model()
         self.model_candidates[parent_arena_id_2].init_model()
         self.model_candidates[parent_arena_id_2].load_model()
-
-
-
+        new_model_id = self.gen_new_model_id()
+        new_lineage = Lineage(
+            new_model_id, 
+            self.model_candidates[parent_arena_id_1].lineage(),
+            self.model_candidates[parent_arena_id_2].lineage()
+        )
+        new_config=gen_model_candidate_config(
+            arena_id=target_arena_id,
+            model_id=self.new_model_id,
+            epoch=self.epoch,
+            save_dir=self.model_save_dir,
+            arena_save_dir=self.arena_save_dir,
+            model_config=self.model_config,
+            backprop_config=self.backprop_config,
+            random_seed=self.random_seed + new_model_id,
+            age=0,
+            shield=self.shield,
+            lineage = new_lineage,
+            device = "cuda",
+            epoch_to_accuracy={}
+        )
+        assert self.model_candidates[target_arena_id] is None, "Cannot Create A New Model At A Non Null Location"
+        self.model_candidates[target_arena_id] = ModelCandidate(new_config)
+        self.model_candidates[target_arena_id].save_config()
+        self.model_candidates[target_arena_id].breed(
+            other_candidate = self.model_candidates[parent_arena_id_2], 
+            epoch = self.epoch,
+            new_model_id = new_model_id, 
+            save_dir = os.path.join(self.model_save_dir, new_model_id), 
+            logger = logger,
+            mutation_policy = "average",
+            max_weight_deviation = 0.05,
+        )
+        # Now, all the state_dict are saved properly, just need to load them
         self.model_candidates[parent_arena_id_1].free_memory()
         self.model_candidates[parent_arena_id_2].free_memory()
 
