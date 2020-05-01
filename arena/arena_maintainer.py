@@ -120,7 +120,7 @@ class ArenaMaintainer(object):
         config = gen_model_candidate_config(
             arena_id=arena_id,
             model_id=model_id,
-            epoch=self.epoch(),
+            epoch=self.epoch() - 1,
             save_dir=self.model_save_dir(),
             arena_save_dir=self.arena_save_dir(),
             model_config=self.model_config(),

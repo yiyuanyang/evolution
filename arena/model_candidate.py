@@ -95,13 +95,13 @@ class ModelCandidate(object):
         """
         self.logger.log_model_activity("Starting Round ", self)
         self.load_model()
+        self.mm.epoch_step()
         for i in range(epoch_per_round):
             while self.mm.model_exists(self, epoch + i + 1):
                 continue
             self.run_epoch(data_loader=data_loaders[0], phase=0)
             self.run_epoch(data_loader=data_loaders[1], phase=1)
             self.run_epoch(data_loader=data_loaders[2], phase=2)
-            self.mm.epoch_step()
             self.save()
         self.mm.aging()
         with torch.no_grad():
