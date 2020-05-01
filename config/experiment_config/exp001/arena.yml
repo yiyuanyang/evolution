@@ -79,6 +79,7 @@ train_config: {
     random_seed: 10,
     mutation_policy: "average",
     max_weight_mutation: 0.00005,
+    max_weight_mutation_decay: 0.98,
     downward_acceptance: 6 # Only consider to breed with next six models with equal probability
   },
 

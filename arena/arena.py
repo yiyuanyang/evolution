@@ -114,7 +114,6 @@ class Arena(object):
     def run_round(self):
         for arena_id in self.get_arena_ids():
             self.model_candidates[arena_id].run_round(self.am.epoch(), self.am.epoch_per_round(), self.am.data_loaders)
-        self.am.update_stats(self)
 
 
     
@@ -122,9 +121,11 @@ class Arena(object):
         for i in range(self.am.rounds(), self.am.max_rounds()):
             self.logger.log("Initiating Round {i}".format(i=i))
             self.run_round()
-            self.am.epoch_step()
+            self.am.epoch_step(self.am.epoch_per_round() - 1)
+            self.am.update_stats(self)
             self.eliminate()
             self.breed()
+            self.am.epoch_step(1)
 
     
 

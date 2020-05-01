@@ -5,6 +5,7 @@
 """
 
 from Evolution.arena.model_candidate import ModelCandidate, gen_model_candidate_config
+from Evolution.utils.lineage.lineage_tree import Lineage
 import pickle
 import pandas as pd
 import os
@@ -46,8 +47,14 @@ class ArenaMaintainer(object):
     def arena_save_dir(self):
         return self.create_dir(os.path.join(self.save_config["save_dir"], "arena"))
 
+    def original_max_weight_mutation(self):
+        return self.evolution_config("max_weight_mutation")
+
     def max_weight_mutation(self):
-        return self.evolution_config("max_weight_deviation")
+        return self.evolution_config("max_weight_mutation") * (self.max_weight_mutation_decay() ** self.epoch())
+
+    def max_weight_mutation_decay(self):
+        return self.evolution_config("max_weight_mutation_decay")
 
     def use_existing_model(self):
         return self.evolution_config("use_existing_model")
@@ -88,8 +95,10 @@ class ArenaMaintainer(object):
     def epoch(self):
         return self.cur_epoch
 
-    def epoch_step(self):
-        self.cur_epoch += self.epoch_per_round()
+    def epoch_step(self, steps = None):
+        if steps is None:
+            steps = self.epoch_per_round()
+        self.cur_epoch += steps
     
     def rounds(self):
         return self.epoch() // self.epoch_per_round() + 1
@@ -105,7 +114,9 @@ class ArenaMaintainer(object):
         with open(arena_config_save_dir, 'rb') as handle:
             return ModelCandidate(pickle.load(handle))
     
-    def init_model_candidate(self, arena_id, model_id, lineage = [None, None]):
+    def init_model_candidate(self, arena_id, model_id, lineage = None):
+        if lineage is None:
+            lineage = Lineage(model_id, None, None)
         config = gen_model_candidate_config(
             arena_id=arena_id,
             model_id=model_id,
@@ -143,7 +154,7 @@ class ArenaMaintainer(object):
     def eliminate_by_accuracy(self, arena, logger):
         accuracies = arena.get_eval_accuracies()
         raw_accuracies = [value for key, value in accuracies.items()].sort()
-        cut_off = raw_accuracies[int(len(raw_accuracies)*self.elimination_rate()) + 1]
+        cut_off = raw_accuracies[int(len(raw_accuracies)*self.elimination_rate())]
         shielded = arena.get_shielded_ids()
         survived = []
         eliminated = []
@@ -162,9 +173,9 @@ class ArenaMaintainer(object):
         eval_save_dir = self.create_file(os.path.join(self.arena_save_dir(), "eval_stats.csv"))
         test_save_dir = self.create_file(os.path.join(self.arena_save_dir(), "test_stats.csv"))
         if self.use_existing_model():
-            train_stats_dict = pd.read_csv(train_save_dir).to_dict()
-            eval_stats_dict = pd.read_csv(eval_save_dir).to_dict()
-            test_stats_dict = pd.read_csv(test_save_dir).to_dict()
+            train_stats_dict = pd.read_csv(train_save_dir, index=False).to_dict()
+            eval_stats_dict = pd.read_csv(eval_save_dir, index=False).to_dict()
+            test_stats_dict = pd.read_csv(test_save_dir, index=False).to_dict()
         else:
             train_stats_dict = self.init_stats_dict()
             eval_stats_dict = self.init_stats_dict()
@@ -177,6 +188,7 @@ class ArenaMaintainer(object):
         test_stats_dict.to_csv(test_save_dir, index = False)
 
     def _update_stats(self, stats_dict, accuracies, losses):
+        stats_dict["Epoch"].append(self.epoch())
         for arena_id, accuracy in accuracies.items():
             stats_dict["ID: " + str(int(arena_id)) + " accuracy"].append(accuracy)
             stats_dict["ID: " + str(int(arena_id)) + " loss"].append(losses[arena_id])
@@ -184,6 +196,7 @@ class ArenaMaintainer(object):
 
     def init_stats_dict(self):
         stats_dict = dict()
+        stats_dict["Epoch"] = []
         for arena_id in range(self.num_models()):
             stats_dict["ID: " + str(int(arena_id)) + " accuracy"] = []
             stats_dict["ID: " + str(int(arena_id)) + " loss"] = []

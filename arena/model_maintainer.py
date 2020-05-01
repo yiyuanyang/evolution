@@ -26,6 +26,9 @@ class ModelMaintainer(object):
     def model_id(self):
         return self.config["model_id"]
 
+    def device(self):
+        return self.config["device"]
+
     def arena_id(self):
         return self.config["arena_id"]
 
@@ -116,18 +119,20 @@ class ModelMaintainer(object):
             self.config = pickle.load(handle)
 
     def init_model(self, ModelCandidate):
-        ModelCandidate.model = gen_model(self.config["model_config"])
+        ModelCandidate.model = gen_model(self.config["model_config"]).to(self.device())
         ModelCandidate.optim = torch.optim.Adam(
             ModelCandidate.model.parameters(),
             lr=self.learning_rate(),
             betas=(0.9,0.999)
         ) 
 
-    def load_model(self, ModelCandidate):
+    def load_model(self, ModelCandidate, epoch = None):
+        if epoch is None:
+            epoch = self.epoch()
         self.init_model(ModelCandidate)
         if self.model_exists(ModelCandidate):
-            ModelCandidate.model.load_state_dict(torch.load(self.model_save_dir()))
-            ModelCandidate.optim.load_state_dict(torch.load(self.optim_save_dir()))
+            ModelCandidate.model.load_state_dict(torch.load(self.model_save_dir(epoch)))
+            ModelCandidate.optim.load_state_dict(torch.load(self.optim_save_dir(epoch)))
 
     def model_exists(self, ModelCandidate, epoch = None):
         if epoch is None:
@@ -166,15 +171,15 @@ class ModelMaintainer(object):
         Logger Related
     """
     def batch_log(self, batch_index, num_batches, data, ground_truth, prediction_prob, prediction, loss, logger):
-        logger.log_data(batch_index=batch_index, data=data, ground_truth=ground_truth)
         if batch_index % 100 == 0:
+            logger.log_data(batch_index=batch_index, data=data, label=ground_truth)
             logger.log("Batch: " + str(batch_index) + "/" + str(num_batches))
             logger.log_batch_result(
                 batch_index=batch_index,
                 num_batches=num_batches,
                 prediction_prob=prediction_prob,
                 prediction=prediction,
-                ground_truth=ground_truth,
+                ground_truth=ground_truth.cpu().numpy().tolist(),
                 loss=loss,
                 top_n=8
             )

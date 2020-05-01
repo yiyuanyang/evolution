@@ -1,7 +1,7 @@
 """
     Content: Driver file for initial exp001 arena
     Author: Yiyuan Yang
-    Date: April. 19th 2020
+    Date: April. 30th 2020
 """
 
 import sys

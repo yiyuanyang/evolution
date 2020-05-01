@@ -8,6 +8,7 @@ import os
 import torch
 from torch import nn
 from Evolution.arena.model_maintainer import ModelMaintainer
+from Evolution.utils.lineage.lineage_tree import Lineage
 from Evolution.utils.log.logger import Logger
 import pickle
 import numpy as np
@@ -23,7 +24,7 @@ sample_model_candidate_initialization_config = {
     "random_seed": 0,
     "age_left": 0,
     "shield_epoch": 13,
-    "lineage": [None, None]
+    "lineage": Lineage(0, None, None)
 }
 
 
@@ -38,8 +39,10 @@ def gen_model_candidate_config(
     random_seed,
     age_left = 8,
     shield = 10,
-    lineage = [None, None]
+    lineage = None
 ):
+    if lineage is None:
+        lineage = Lineage(model_id, None, None)
     return vars()
 
 
@@ -93,12 +96,14 @@ class ModelCandidate(object):
         self.logger.log_model_activity("Starting Round ", self)
         self.load_model()
         for i in range(epoch_per_round):
-            if not self.mm.model_exists(self, epoch + i):
-                self.mm.epoch_step()
-                self.run_epoch(data_loader=data_loaders[0], phase=0)
-                self.run_epoch(data_loader=data_loaders[1], phase=1)
-                self.run_epoch(data_loader=data_loaders[2], phase=2)
-                self.save()
+            while self.mm.model_exists(self, epoch + i + 1):
+                continue
+            self.run_epoch(data_loader=data_loaders[0], phase=0)
+            self.run_epoch(data_loader=data_loaders[1], phase=1)
+            self.run_epoch(data_loader=data_loaders[2], phase=2)
+            self.mm.epoch_step()
+            self.save()
+        self.mm.aging()
         with torch.no_grad():
             self.unload()
 
@@ -118,16 +123,15 @@ class ModelCandidate(object):
         ))
         predictions, ground_truths, losses = [],[],[]
         for batch_index, (data, ground_truth) in enumerate(data_loader):
-            prediction_prob, prediction, ground_truth, loss = self.step(data, ground_truth, phase)
-            predictions.append(prediction)
-            ground_truths.append(ground_truth)
+            prediction_prob, prediction, loss = self.step(data, ground_truth, phase)
+            predictions += prediction
+            ground_truths += ground_truth.cpu().numpy().tolist()
             losses.append(loss)
-            num_batches = len(data_loader) // data.shape[0]
+            num_batches = len(data_loader)
             self.mm.batch_log(batch_index, num_batches, data, ground_truth, prediction_prob, prediction, loss, self.logger)
         accuracy, loss = self.logger.log_epoch_metrics(self.mm.epoch(), ground_truths, predictions, losses)
         self.mm.set_accuracy(phase, accuracy)
         self.mm.set_loss(phase, loss)
-        self.mm.epoch_step()
         if phase == 0:
             self.model.log_weights(self.logger)
 
@@ -150,7 +154,7 @@ class ModelCandidate(object):
         prediction = [pred.index(max(pred)) for pred in prediction_prob]
         ground_truth = ground_truth.data.cpu().numpy().tolist()
         loss = loss.data.cpu().numpy().tolist()
-        return prediction_prob, prediction, ground_truth, loss
+        return prediction_prob, prediction, loss
 
     def breed(
         self, 
