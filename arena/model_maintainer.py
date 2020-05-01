@@ -14,7 +14,7 @@ class ModelMaintainer(object):
         if config:
             self.config = config
             self.config["device"] = "cuda"
-            self.config["save_dir"] = os.path.join(self.config["save_dir"], self.config["model_id"])
+            self.config["save_dir"] = os.path.join(self.config["save_dir"], str(self.config["model_id"]))
             self.config["accuracies"] = {0:{},1:{},2:{}}
             self.config["losses"] = {0:{},1:{},2:{}}
         else:
@@ -62,20 +62,20 @@ class ModelMaintainer(object):
     def model_save_dir(self, epoch = None):
         if epoch is None:
             epoch = self.epoch()
-        return os.path.join(self.config["save_dir"], epoch + "_model.pt")
+        return os.path.join(self.config["save_dir"], str(epoch) + "_model.pt")
     
     def optim_save_dir(self, epoch = None):
         if epoch is None:
             epoch = self.epoch()    
-        return os.path.join(self.config["save_dir"], epoch + "_optim.pt")
+        return os.path.join(self.config["save_dir"], str(epoch) + "_optim.pt")
 
     def config_save_dir(self, epoch = None):
         if epoch is None:
             epoch = self.epoch()
-        return os.path.join(self.config["save_dir"], epoch + "_config.pickle")
+        return os.path.join(self.config["save_dir"], str(epoch) + "_config.pickle")
 
     def arena_config_save_dir(self):
-        return os.path.join(self.config["arena_save_dir"], self.arena_id() + "_config.pickle")
+        return os.path.join(self.config["arena_save_dir"], str(self.arena_id()) + "_config.pickle")
 
     def accuracy(self, phase, epoch = None):
         if epoch is None:
@@ -125,8 +125,9 @@ class ModelMaintainer(object):
 
     def load_model(self, ModelCandidate):
         self.init_model(ModelCandidate)
-        ModelCandidate.model.load_state_dict(torch.load(self.model_save_dir()))
-        ModelCandidate.optim.load_state_dict(torch.load(self.optim_save_dir()))
+        if self.model_exists(ModelCandidate):
+            ModelCandidate.model.load_state_dict(torch.load(self.model_save_dir()))
+            ModelCandidate.optim.load_state_dict(torch.load(self.optim_save_dir()))
 
     def model_exists(self, ModelCandidate, epoch = None):
         if epoch is None:

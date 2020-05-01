@@ -144,38 +144,48 @@ class ResNet(nn.Module):
     def breed_net(
         self, 
         other_net, 
+        logger,
         policy = "average",
-        max_weight_deviation = None # Not yet implemented
+        max_weight_mutation = 0.00005
     ):
         """
             Given a right hand side net, breed a new net that with some policy,
             combines the two
         """
+        self.log("Parent 1:")
+        self.log_weights(logger)
+        self.log("Parent 2:")
+        other_net.log_weights(logger)
+
         with torch.no_grad():
             temp = self.conv1
             self.conv1 = model_breeding.breed_conv(
                 left_conv=self.conv1,
                 right_conv=other_net.conv1,
                 in_channels=self.in_channels,
-                out_channels=64
+                out_channels=64,
+                policy=policy,
+                max_weight_mutation=max_weight_mutation
             )
             del temp
             temp = self.layer1
-            self.layer1 = self.layer1.breed(other_block=other_net.layer1, policy=policy)
+            self.layer1 = self.layer1.breed(other_block=other_net.layer1, policy=policy, max_weight_mutation=max_weight_mutation)
             del temp
             temp = self.layer2
-            self.layer2 = self.layer1.breed(other_block=other_net.layer2, policy=policy)
+            self.layer2 = self.layer1.breed(other_block=other_net.layer2, policy=policy, max_weight_mutation=max_weight_mutation)
             del temp
             temp = self.layer3
-            self.layer3 = self.layer1.breed(other_block=other_net.layer3, policy=policy)
+            self.layer3 = self.layer1.breed(other_block=other_net.layer3, policy=policy, max_weight_mutation=max_weight_mutation)
             del temp
             temp = self.layer4
-            self.layer4 = self.layer1.breed(other_block=other_net.layer4, policy=policy)
+            self.layer4 = self.layer1.breed(other_block=other_net.layer4, policy=policy, max_weight_mutation=max_weight_mutation)
             del temp
 
             # We are not changing the fully connected layer
             #self.avgpool = nn.AdaptiveAvgPool2d((1,1))
             #self.fc = nn.Linear(512 * self.block.expansion, self.num_classes)
+            logger.log("Child")
+            self.log_weights(logger)
             return self
 
 

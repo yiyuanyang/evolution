@@ -189,7 +189,7 @@ class Logger(object):
         prediction_prob = [self.round_to_4_decimal(item) for item in prediction_prob]
         prediction_string = [str(item) for item in prediction_prob]
         prediction_string = "\n".join(prediction_string[:top_n])
-        log = ("LOGGING: Batch " + str(batch_index) + "/" + str(total_batches) +
+        log = ("LOGGING: Batch " + str(batch_index) + "/" + str(num_batches) +
             "\n Prediction Probability for top {top_n}: \n".format(top_n=top_n) + 
             prediction_string + "\n Prediction:" + str(prediction[:top_n]) + "\n Ground Truth: " + 
             str(ground_truth[:top_n]) + "\n Batch Loss: " + str(loss)
@@ -360,7 +360,7 @@ class Logger(object):
         """
         global_accuracy, accuracy, global_recall, recall, \
             global_precision, precision, global_f1, f1, global_loss = \
-            self._log_epoch_metrics(self, epoch, ground_truth, prediction, loss)
+            self._log_epoch_metrics(epoch, ground_truth, prediction, loss)
 
         self.stats[self.phase]["epoch"].append(epoch)
         self.stats[self.phase]["global_accuracy"].append(global_accuracy)
@@ -375,6 +375,7 @@ class Logger(object):
 
         stats_dataframe = pd.DataFrame.from_dict(self.stats[self.phase])
         stats_dataframe.to_csv(self.stat_save_dir[self.phase])
+        return global_accuracy, global_loss
 
     
     def load_prior_metrics(self):
@@ -383,16 +384,16 @@ class Logger(object):
         test_stats = pd.read_csv(self.stat_save_dir[2])
         prior_metrics = [train_stats, eval_stats, test_stats]
         for i in range(3):
-            self.stats[i]["epoch"] = prior_metrics["epoch"].tolist()
-            self.stats[i]["global_accuracy"] = prior_metrics["global_accuracy"].tolist()
-            self.stats[i]["accuracy"] = self._json_parse(prior_metrics["accuracy"].tolist())
-            self.stats[i]["global_recall"] = prior_metrics["global_recall"].tolist()
-            self.stats[i]["recall"] = self._json_parse(prior_metrics["recall"].tolist())
-            self.stats[i]["global_precision"] = prior_metrics["global_precision"].tolist()
-            self.stats[i]["precision"] = self._json_parse(prior_metrics["precision"].tolist())
-            self.stats[i]["global_f1"] = prior_metrics["global_f1"].tolist()
-            self.stats[i]["f1"] = self._json_parse(prior_metrics["f1"].tolist())
-            self.stats[i]["loss"] = prior_metrics["loss"].tolist()
+            self.stats[i]["epoch"] = prior_metrics[i]["epoch"].tolist()
+            self.stats[i]["global_accuracy"] = prior_metrics[i]["global_accuracy"].tolist()
+            self.stats[i]["accuracy"] = self._json_parse(prior_metrics[i]["accuracy"].tolist())
+            self.stats[i]["global_recall"] = prior_metrics[i]["global_recall"].tolist()
+            self.stats[i]["recall"] = self._json_parse(prior_metrics[i]["recall"].tolist())
+            self.stats[i]["global_precision"] = prior_metrics[i]["global_precision"].tolist()
+            self.stats[i]["precision"] = self._json_parse(prior_metrics[i]["precision"].tolist())
+            self.stats[i]["global_f1"] = prior_metrics[i]["global_f1"].tolist()
+            self.stats[i]["f1"] = self._json_parse(prior_metrics[i]["f1"].tolist())
+            self.stats[i]["loss"] = prior_metrics[i]["loss"].tolist()
 
     def _json_parse(self, metric_list):
         return [json.loads(item) for item in metric_list]
@@ -475,6 +476,27 @@ class Logger(object):
         stats
     ):
         return [round(item, 2) for item in stats]
+
+
+    def log_elimination(self, survived, eliminated, value_dict, reason):
+        survived = {arena_id: value_dict[arena_id] for arena_id in eliminated}
+        eliminated = {arena_id: value_dict[arena_id] for arena_id in eliminated}
+        self._log("Eliminated by {reason}".format(reason))
+        self._log("Survived Value Pairs {survived}".format(survived))
+        self._log("Eliminated Value Pairs {eliminated}".format(eliminated))
+
+    
+    def log_round_stats(self, round, accuracy, loss):
+        self._log("Accuracies For Each Arena_ID: {accuracy}".format(accuracy))
+        self._log("Losses For Each Arena_ID: {loss}".format(loss))
+
+    def log_model_activity(self, activity, model_candidate):
+        self._log("{activity} for Arena ID: {arena_id}, Model ID: {model_id}".format(
+            activity=activity,
+            arena_id=model_candidate.mm.arena_id(),
+            model_id=model_candidate.mm.model_id()
+        )
+    )
 
 
 

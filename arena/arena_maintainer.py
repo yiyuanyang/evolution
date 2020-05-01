@@ -46,7 +46,7 @@ class ArenaMaintainer(object):
     def arena_save_dir(self):
         return self.create_dir(os.path.join(self.save_config["save_dir"], "arena"))
 
-    def max_weight_deviation(self):
+    def max_weight_mutation(self):
         return self.evolution_config("max_weight_deviation")
 
     def use_existing_model(self):
@@ -76,8 +76,8 @@ class ArenaMaintainer(object):
     def random_seed(self):
         return self.evolution_config("random_seed")
     
-    def shield(self):
-        return self.evolution_config("shield")
+    def shield_epoch(self):
+        return self.evolution_config("shield_epoch")
 
     def downward_acceptance(self):
         return self.evolution_config("downward_acceptance")
@@ -116,13 +116,10 @@ class ArenaMaintainer(object):
             backprop_config=self.backprop_config(),
             random_seed=self.random_seed() + model_id,
             age_left = self.max_round_per_model(),
-            shield = self.shield(),
+            shield = self.shield_epoch(),
             lineage = lineage
         )
         mc = ModelCandidate(config)
-        mc.init_model()
-        mc.save()
-        mc.unload()
         return mc
 
     """
@@ -130,11 +127,12 @@ class ArenaMaintainer(object):
     """
     def eliminate_by_age(self, arena, logger):
         ages = arena.get_model_ages()
+        shielded = arena.get_shielded_ids()
         survived = []
         eliminated = []
         for arena_id, age_left in ages.items():
             assert age_left >=0, "Age Left Should Not Got Negative"
-            if age_left == 0:
+            if age_left == 0 and not shielded[arena_id]:
                 del arena.model_candidates[arena_id]
                 arena.model_candidates[arena_id] = None
                 eliminated.append(arena_id)
@@ -146,10 +144,11 @@ class ArenaMaintainer(object):
         accuracies = arena.get_eval_accuracies()
         raw_accuracies = [value for key, value in accuracies.items()].sort()
         cut_off = raw_accuracies[int(len(raw_accuracies)*self.elimination_rate()) + 1]
+        shielded = arena.get_shielded_ids()
         survived = []
         eliminated = []
         for arena_id, accuracy in accuracies.items():
-            if accuracy < cut_off:
+            if accuracy < cut_off and not shielded[arena_id]:
                 del arena.model_candidates[arena_id]
                 arena.model_candidates[arena_id] = None
                 eliminated.append(arena_id)

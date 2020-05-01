@@ -50,28 +50,33 @@ class ModelCandidate(object):
     ):
         self.mm = ModelMaintainer(config)
         self.device = torch.device(config["device"])
+        if not os.path.exists(self.mm.save_dir()):
+            os.system("mkdir " + self.mm.save_dir())
         self.logger = Logger(self.mm.save_dir())
-
-        self.save()
-        self.unload()
-
-    def init_model(self):
-        self.mm.init_model(self)
+        if not self.mm.model_exists(self):
+            self.load_model()
+            self.save()
+            self.unload()
 
     def save_model(self):
+        self.logger.log_model_activity("Saving Model", self)
         self.mm.save_model(self)
 
     def save_config(self):
+        self.logger.log_model_activity("Saving Config", self)
         self.mm.save_config()
 
     def save(self):
+        self.logger.log_model_activity("Saving Snapshot ", self)
         self.save_model()
         self.save_config()
 
     def unload(self):
+        self.logger.log_model_activity("Unloading", self)
         self.mm.unload_model(self)
 
-    def load_model(self, load_optim=True):
+    def load_model(self):
+        self.logger.log_model_activity("Loading Model", self)
         self.mm.load_model(self)
 
     def run_round(
@@ -85,7 +90,7 @@ class ModelCandidate(object):
             Load in the model, perform epochs_per_round epochs of backpropagation
             Save the model and return performance
         """
-        self.logger.log("Starting Round For Arena ID: {arena_id}, Model ID: {model_id}".format(arena_id=arena_id, model_id=model_id))
+        self.logger.log_model_activity("Starting Round ", self)
         self.load_model()
         for i in range(epoch_per_round):
             if not self.mm.model_exists(self, epoch + i):
@@ -103,6 +108,7 @@ class ModelCandidate(object):
         data_loader, 
         phase
     ):
+        self.logger.log_model_activity("Starting Epoch {epoch} ".format(epoch=self.mm.epoch()), self)
         self.mm.epoch_prep(self, phase)
         self.logger.set_phase(self.mm.epoch(), phase)
         self.logger.log("Epoch: {epoch} for arena_id: {arena_id} and model_id: {model_id}".format(
@@ -152,13 +158,14 @@ class ModelCandidate(object):
         new_arena_id,
         new_model_id, 
         logger,
-        mutation_policy = "average"
+        mutation_policy = "average",
+        max_weight_mutation = 0.00005
     ):
         self.load_model()
         other_candidate.load_model()
         torch.manual_seed(self.mm.random_seed())
         np.random.seed(self.mm.random_seed())
-        self.model.breed_net(other_candidate.model, logger, mutation_policy)
+        self.model.breed_net(other_candidate.model, logger, mutation_policy, max_weight_mutation)
         new_model_save_dir = os.path.join(self.mm.save_dir(), str(new_model_id))
         torch.save(self.model.state_dict(), os.path.join(new_model_save_dir, str(self.mm.epoch()) + "_model.pt"))
         torch.save(self.optim.state_dict(), os.path.join(new_model_save_dir, str(self.mm.epoch()) + "_optim.pt"))

@@ -65,20 +65,20 @@ train_config: {
   },
 
   evolution_config: {
-    start_epoch: 1,
+    start_epoch: 0,
     max_rounds: 50,
     epoch_per_round: 5,
-    num_models: 50,
-    use_existing_models: False,
+    num_models: 5,
+    use_existing_model: False,
     cur_arena_id: 0,
     load_from_models: False,
     elimination_rate: 20,
-    max_age_per_model: 4, # This is in rounds
-    max_shield_per_model: 20, # This is in epochs
+    max_round_per_model: 8, # This is in rounds
+    age_variation: [-3, -2, -1, 0, 1, 2, 3],
+    shield_epoch: 20, # This is in epochs
     random_seed: 10,
     mutation_policy: "average",
-    max_weight_deviation: 0.05,
-    breed_intention_rate: 0.5, # Each model has a 50% chance of breeding if given the opportunity
+    max_weight_mutation: 0.00005,
     downward_acceptance: 6 # Only consider to breed with next six models with equal probability
   },
 
@@ -97,7 +97,7 @@ train_config: {
 
 # Logger and model saving
 save_config: {
-  model_save_dir: "E:\\saved_experiments\\evolution", 
+  save_dir: "E:\\saved_experiments\\evolution\\exp001\\arena", 
   use_logger: True,
   dump_frequency: 10,
   log_frequency: 200,

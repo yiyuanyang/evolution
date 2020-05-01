@@ -13,6 +13,7 @@ from tqdm import tqdm
 from Evolution.model.models.resnet.arena_resnet import gen_model
 from Evolution.train.exp001.experiment_preparer import ExperimentPreparer
 from Evolution.data.CIFAR10.CIFAR10_dataset import CIFAR10Dataset
+from Evolution.arena.arena import Arena
 import torch.nn.functional as F
 from sklearn import metrics
 
@@ -29,17 +30,7 @@ class Trainer(object):
         self.basic_config, self.data_config, self.train_config, self.save_config = \
             self.experiment_preparer.get_each_config()
         self.load_data()
-        self.model = gen_model(self.train_config["model_config"]).to(self.device)
-        self.optim = torch.optim.Adam(
-            self.model.parameters(),
-            lr=self.train_config["backprop_config"]["learning_rate"],
-            betas=(0.9,0.999)
-        )
-        self.logger = self.experiment_preparer.get_logger()
-        self.logger.log_config(
-            config_name="Experiment Config",
-            config=self.experiment_preparer.get_each_config()
-        )
+        self.arena = Arena(self.data_loaders, self.train_config, self.save_config)
     
 
     def load_data(self):
@@ -72,7 +63,8 @@ class Trainer(object):
         self.data_loaders = [train_loader, eval_loader, test_loader]
 
     
-    def set_up_arena(self, evolution_config):
+    def start_experiment(self):
+        self.arena.run_experiment()
 
 
 

@@ -183,7 +183,7 @@ class Bottleneck(nn.Module):
         return out
 
 
-    def breed(self, other_block, policy = "average"):
+    def breed(self, other_block, policy = "average", max_weight_mutation=0.00005):
         """
             Generate a new Basic Block based on current block
             and input block
@@ -205,7 +205,8 @@ class Bottleneck(nn.Module):
             kernel_size=self.kernel_size,
             stride=self.stride,
             bias=False,
-            policy=policy
+            policy=policy,
+            max_weight_mutation=max_weight_mutation
         )
 
         new_block.conv2 = model_breeding.breed_conv(
@@ -216,7 +217,8 @@ class Bottleneck(nn.Module):
             kernel_size=self.kernel_size,
             stride=self.stride,
             bias=False,
-            policy=policy
+            policy=policy,
+            max_weight_mutation=max_weight_mutation
         )
         
         new_block.conv3 = model_breeding.breed_conv(
@@ -239,7 +241,8 @@ class Bottleneck(nn.Module):
                 kernel_size=self.kernel_size,
                 stride=self.stride,
                 bias=False,
-                policy=policy
+                policy=policy,
+            max_weight_mutation=max_weight_mutation
             )
         
         return new_block

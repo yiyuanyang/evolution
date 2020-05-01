@@ -15,7 +15,8 @@ def breed_conv(
     kernel_size,
     stride,
     bias = False,
-    policy = "average"
+    policy = "average",
+    max_weight_mutation = 0.00005
 ):
     left_weight = left_conv.weight.data
     right_weight = right_conv.weight.data
@@ -28,14 +29,14 @@ def breed_conv(
     )
 
     with torch.no_grad():
-        new_conv.weight = nn.Parameter(breed_tensor(left_weight, right_weight))
+        new_conv.weight = nn.Parameter(breed_tensor(left_weight, right_weight, policy, max_weight_mutation))
         if bias:
-            new_conv.bias = nn.Parameter(breed_tensor(left_conv.bias.data, right_conv.bias.data))
+            new_conv.bias = nn.Parameter(breed_tensor(left_conv.bias.data, right_conv.bias.data, policy, max_weight_mutation))
 
     return new_conv
         
 
-    def breed_tensor(left_tensor, right_tensor, policy = "average"):
+    def breed_tensor(left_tensor, right_tensor, policy = "average", max_weight_mutation=0.00005):
         if policy == "average":
             # A simple average of two tensors
             return (left_tensor + right_tensor)/2
@@ -50,7 +51,7 @@ def breed_conv(
 
             if policy == "random_mutate":
             # Also multiply every weight by a modifier
-                modifier = (torch.randint_like(linear_combined_weight, low=0, high=2) * torch.randn_like(linear_combined_weight) / 6) + 1
+                modifier = (torch.randint_like(linear_combined_weight, low=0, high=2) * torch.randn_like(linear_combined_weight) * max_weight_mutation) + 1
                 linear_combined_weight  *= modifier
 
             return linear_combined_weight

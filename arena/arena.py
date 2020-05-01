@@ -38,34 +38,34 @@ class Arena(object):
         return model_id
 
     def get_model_ids(self):
-        return [model_candidate.mm.model_id() for model_candidate in self.model_candidates]
+        return [model_candidate.mm.model_id() for arena_id, model_candidate in self.model_candidates.items()]
 
     def get_arena_ids(self):
-        return [model_candidate.mm.arena_id() for model_candidate in self.model_candidates if model_candidate is not None]
+        return [model_candidate.mm.arena_id() for arena_id, model_candidate in self.model_candidates.items() if model_candidate is not None]
 
     def get_model_ages(self):
-        return {model_candidate.mm.arena_id(): model_candidate.mm.age() for model_candidate in self.model_candidates if model_candidate is not None}
+        return {model_candidate.mm.arena_id(): model_candidate.mm.age() for arena_id, model_candidate in self.model_candidates.items() if model_candidate is not None}
 
-    def get_model_shields(self):
-        return {model_candidate.mm.arena_id(): model_candidate.mm.shield()>0 for model_candidate in self.model_candidates if model_candidate is not None}
+    def get_shielded_ids(self):
+        return {model_candidate.mm.arena_id(): model_candidate.mm.shield()>0 for arena_id, model_candidate in self.model_candidates.items() if model_candidate is not None}
 
     def get_train_accuracies(self):
-        return {model_candidate.mm.arena_id(): model_candidate.mm.accuracy(0, self.am.epoch()) for model_candidate in self.model_candidates if model_candidate is not None}
+        return {model_candidate.mm.arena_id(): model_candidate.mm.accuracy(0, self.am.epoch()) for arena_id, model_candidate in self.model_candidates.items() if model_candidate is not None}
 
     def get_eval_accuracies(self):
-        return {model_candidate.mm.arena_id(): model_candidate.mm.accuracy(1, self.am.epoch()) for model_candidate in self.model_candidates if model_candidate is not None}
+        return {model_candidate.mm.arena_id(): model_candidate.mm.accuracy(1, self.am.epoch()) for arena_id, model_candidate in self.model_candidates.items() if model_candidate is not None}
 
     def get_test_accuracies(self):
-        return {model_candidate.mm.arena_id(): model_candidate.mm.accuracy(0, self.am.epoch()) for model_candidate in self.model_candidates if model_candidate is not None}
+        return {model_candidate.mm.arena_id(): model_candidate.mm.accuracy(0, self.am.epoch()) for arena_id, model_candidate in self.model_candidates.items() if model_candidate is not None}
 
     def get_train_losses(self):
-        return {model_candidate.mm.arena_id(): model_candidate.mm.loss(0, self.am.epoch()) for model_candidate in self.model_candidates if model_candidate is not None}
+        return {model_candidate.mm.arena_id(): model_candidate.mm.loss(0, self.am.epoch()) for arena_id, model_candidate in self.model_candidates.items() if model_candidate is not None}
 
     def get_eval_losses(self):
-        return {model_candidate.mm.arena_id(): model_candidate.mm.loss(1, self.am.epoch()) for model_candidate in self.model_candidates if model_candidate is not None}
+        return {model_candidate.mm.arena_id(): model_candidate.mm.loss(1, self.am.epoch()) for arena_id, model_candidate in self.model_candidates.items() if model_candidate is not None}
 
     def get_test_losses(self):
-        return {model_candidate.mm.arena_id(): model_candidate.mm.loss(2, self.am.epoch()) for model_candidate in self.model_candidates if model_candidate is not None}
+        return {model_candidate.mm.arena_id(): model_candidate.mm.loss(2, self.am.epoch()) for arena_id, model_candidate in self.model_candidates.items() if model_candidate is not None}
 
     def get_open_arena_ids(self):
         return [arena_id for arena_id in range(self.am.num_models()) if self.model_candidates[arena_id] is None]
@@ -74,19 +74,19 @@ class Arena(object):
         self.am.eliminate_by_accuracy(self, self.logger)
         self.am.eliminate_by_age(self, self.logger)
 
-    def breed(self, survived, eliminated, logger):
+    def breed(self):
+        survived = self.get_arena_ids()
+        eliminated = self.get_open_arena_ids()
         for i in range(len(survived)):
             if i == len(eliminated) or i == len(survived) - 1:
                 break
             parent_arena_id_1 = survived[i]
             np.random.seed(self.am.random_seed()-1)
             parent_arena_id_2 = np.random.choice(survived[i+1:i+6])
-            self._breed(parent_arena_id_1, parent_arena_id_2, eliminated[i], logger)
+            self._breed(parent_arena_id_1, parent_arena_id_2, eliminated[i], self.logger)
         if len(survived) <= len(eliminated):
-            eliminated = self.get_open_arena_ids()
-            survived = self.get_arena_ids()
-            logger.log("Second Round Breeding")
-            self.breed(survived, eliminated, logger)
+            self.logger.log("Another Round Breeding")
+            self.breed()
 
     def _breed(
         self, 
@@ -108,18 +108,23 @@ class Arena(object):
             new_model_id = new_model_id, 
             logger = logger,
             mutation_policy = self.am.mutation_policy(),
+            max_weight_mutation = self.am.max_weight_mutation()
         )
 
     def run_round(self):
         for arena_id in self.get_arena_ids():
             self.model_candidates[arena_id].run_round(self.am.epoch(), self.am.epoch_per_round(), self.am.data_loaders)
         self.am.update_stats(self)
-        self.am.epoch_step()
+
 
     
     def run_experiment(self):
-        for i in range(self.am.round(), self.am.max_rounds()):
+        for i in range(self.am.rounds(), self.am.max_rounds()):
+            self.logger.log("Initiating Round {i}".format(i=i))
             self.run_round()
+            self.am.epoch_step()
+            self.eliminate()
+            self.breed()
 
     
 

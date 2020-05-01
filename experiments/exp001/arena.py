@@ -1,5 +1,5 @@
 """
-    Content: Driver file for initial exp001 gradient descent
+    Content: Driver file for initial exp001 arena
     Author: Yiyuan Yang
     Date: April. 19th 2020
 """
@@ -10,7 +10,7 @@ import torch
 
 def set_up_project():
     project_path = "C:\\Users\\yangy\\Documents\\ComputerVision\\Projects\\code\\projects"
-    config_path = "Evolution\\config\\experiment_config\\exp001\\gradient_descent.yml"
+    config_path = "Evolution\\config\\experiment_config\\exp001\\arena.yml"
     sys.path.append(project_path)
     return os.path.join(project_path, config_path)
 
@@ -21,11 +21,9 @@ def main():
     run()
     config_path = set_up_project()
     from Evolution.train.exp001.experiment_preparer import ExperimentPreparer
-    from Evolution.train.exp001.gradient_descent import Trainer
-
-    Exp001Preparer = ExperimentPreparer(config_path)
-    trainer = Trainer(Exp001Preparer)
-    trainer.train()
+    from Evolution.train.exp001.arena import Trainer
+    trainer = Trainer(config_path)
+    trainer.start_experiment()
 
 if __name__ == "__main__":
     main()
