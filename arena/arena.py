@@ -28,7 +28,7 @@ class Arena(object):
         np.random.seed(self.am.random_seed()-1)
         for arena_id in range(self.am.num_models()):
             if self.am.evolution_config("use_existing_model"):
-                self.model_candidates[arena_id] = self.am.load_model_candidate(arena_id)
+                self.model_candidates[arena_id] = ModelCandidate(arena_save_dir=self.am.arena_save_dir(), arena_id=arena_id)
             else:
                 self.model_candidates[arena_id] = self.am.init_model_candidate(arena_id, self.gen_new_model_id(), shield = 0)
 
@@ -109,6 +109,7 @@ class Arena(object):
             mutation_policy = self.am.mutation_policy(),
             max_weight_mutation = self.am.max_weight_mutation()
         )
+        self.logger.log_lineage(target_arena_id, self.model_candidates[target_arena_id].mm.lineage())
 
     def run_round(self):
         for arena_id in self.get_arena_ids():

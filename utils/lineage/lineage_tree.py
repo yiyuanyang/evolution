@@ -28,10 +28,19 @@ class Lineage(object):
     def copy_lineage(self, lineage):
         if lineage is None:
             return None
-        root = LineageNode(model_id=lineage.model_id)
-        root.left_parent = self.copy_lineage(lineage.left_parent)
-        root.right_parent = self.copy_lineage(lineage.right_parent)
+        root = LineageNode(model_id=lineage.model_id())
+        root.left_parent = self.copy_lineage(lineage.left())
+        root.right_parent = self.copy_lineage(lineage.right())
         return root   
+
+    def model_id(self):
+        return self.root.model_id
+
+    def left(self):
+        return self.root.left
+
+    def right(self):
+        return self.root.right
 
 
     def traverse(self):
@@ -50,7 +59,7 @@ class Lineage(object):
 
 
     def __str__(self):
-        return traverse()
+        return self.traverse()
 
 
     

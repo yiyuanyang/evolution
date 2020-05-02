@@ -55,10 +55,10 @@ class ModelCandidate(object):
     ):
         assert config is not None or (arena_save_dir is not None and arena_id is not None), "Must have non-null argument"
         if config is None:
-            self.mm = ModelMaintainer(arena_save_dir, arena_id)
+            self.mm = ModelMaintainer(arena_save_dir=arena_save_dir, arena_id=arena_id)
             self.device = self.device()
         else:
-            self.mm = ModelMaintainer(config)
+            self.mm = ModelMaintainer(config=config)
             self.device = self.mm.device()
             if not os.path.exists(self.mm.save_dir()):
                 os.system("mkdir " + self.mm.save_dir())

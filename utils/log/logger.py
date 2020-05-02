@@ -498,6 +498,9 @@ class Logger(object):
         )
     )
 
+    def log_lineage(self, arena_id, lineage):
+        self._log("Arena ID: {arena_id} has lineage: {lineage}".format(arena_id=arena_id, lineage=lineage))
+
 
 
 

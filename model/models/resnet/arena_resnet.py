@@ -9,6 +9,7 @@ import torch.nn as nn
 from Evolution.model.model_components.resnet_components.residual_block import BasicBlock, Bottleneck
 from Evolution.survival.breed import model_breeding
 from Evolution.utils.lineage.lineage_tree import Lineage
+from Evolution.utils.weights_understanding.func import func
 import copy
 
 
@@ -152,9 +153,9 @@ class ResNet(nn.Module):
             Given a right hand side net, breed a new net that with some policy,
             combines the two
         """
-        self.log("Parent 1:")
+        logger.log("Parent 1:")
         self.log_weights(logger)
-        self.log("Parent 2:")
+        logger.log("Parent 2:")
         other_net.log_weights(logger)
 
         with torch.no_grad():
@@ -191,6 +192,7 @@ class ResNet(nn.Module):
 
     def log_weights(self, logger):
         logger.log("Logging resnet weights")
+        func.conv_statistics(self.conv1, "conv1", logger)
         for i in range(len(self.layer1)):
             self.layer1[i].log_weights(logger)
         for i in range(len(self.layer2)):
