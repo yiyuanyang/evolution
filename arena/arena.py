@@ -30,7 +30,7 @@ class Arena(object):
             if self.am.evolution_config("use_existing_model"):
                 self.model_candidates[arena_id] = self.am.load_model_candidate(arena_id)
             else:
-                self.model_candidates[arena_id] = self.am.init_model_candidate(arena_id, self.gen_new_model_id())
+                self.model_candidates[arena_id] = self.am.init_model_candidate(arena_id, self.gen_new_model_id(), shield = 0)
 
     def gen_new_model_id(self):
         model_id = self.new_model_id
@@ -44,7 +44,7 @@ class Arena(object):
         return [model_candidate.mm.arena_id() for arena_id, model_candidate in self.model_candidates.items() if model_candidate is not None]
 
     def get_model_ages(self):
-        return {model_candidate.mm.arena_id(): model_candidate.mm.age() for arena_id, model_candidate in self.model_candidates.items() if model_candidate is not None}
+        return {model_candidate.mm.arena_id(): model_candidate.mm.age_left() for arena_id, model_candidate in self.model_candidates.items() if model_candidate is not None}
 
     def get_shielded_ids(self):
         return {model_candidate.mm.arena_id(): model_candidate.mm.shield()>0 for arena_id, model_candidate in self.model_candidates.items() if model_candidate is not None}
@@ -81,7 +81,6 @@ class Arena(object):
             if i == len(eliminated) or i == len(survived) - 1:
                 break
             parent_arena_id_1 = survived[i]
-            np.random.seed(self.am.random_seed()-1)
             parent_arena_id_2 = np.random.choice(survived[i+1:i+6])
             self._breed(parent_arena_id_1, parent_arena_id_2, eliminated[i], self.logger)
         if len(survived) <= len(eliminated):
@@ -98,8 +97,8 @@ class Arena(object):
         new_model_id = self.gen_new_model_id()
         new_lineage = Lineage(
             new_model_id, 
-            self.model_candidates[parent_arena_id_1].lineage(),
-            self.model_candidates[parent_arena_id_2].lineage()
+            self.model_candidates[parent_arena_id_1].mm.lineage(),
+            self.model_candidates[parent_arena_id_2].mm.lineage()
         )
         self.model_candidates[target_arena_id] = self.am.init_model_candidate(target_arena_id, new_model_id, new_lineage)
         self.model_candidates[target_arena_id].breed(
@@ -123,6 +122,7 @@ class Arena(object):
             self.run_round()
             self.am.epoch_step(self.am.epoch_per_round() - 1)
             self.am.update_stats(self)
+            np.random.seed(self.am.random_seed()-1)
             self.eliminate()
             self.breed()
             self.am.epoch_step(1)

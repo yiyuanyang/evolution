@@ -77,7 +77,7 @@ class ModelMaintainer(object):
             epoch = self.epoch()
         return os.path.join(self.config["save_dir"], str(epoch) + "_config.pickle")
 
-    def arena_config_save_dir(self):
+    def arena_save_dir(self):
         return os.path.join(self.config["arena_save_dir"], str(self.arena_id()) + "_config.pickle")
 
     def accuracy(self, phase, epoch = None):
@@ -113,9 +113,13 @@ class ModelMaintainer(object):
     """
     Loading And Saving
     """
-    def load_config(self, arena_save_dir, arena_id):
-        arena_config_save_dir = os.path.join(arena_save_dir, arena_id + "_config.pickle")
-        with open(arena_config_save_dir, 'rb') as handle:
+    def load_config(self, arena_save_dir = None, arena_id = None):
+        if arena_save_dir is None:
+            arena_save_dir = self.arena_save_dir()
+        if arena_id is None:
+            arena_id = self.arena_id()
+        arena_save_dir = os.path.join(self.arena_save_dir(), str(self.arena_id()) + "_config.pickle")
+        with open(arena_save_dir, 'rb') as handle:
             self.config = pickle.load(handle)
 
     def init_model(self, ModelCandidate):
@@ -142,7 +146,7 @@ class ModelMaintainer(object):
     def save_config(self):
         with open(self.config_save_dir(), "wb") as handle: # Save a copy in the model's own folder
             pickle.dump(self.config, handle, protocol=pickle.HIGHEST_PROTOCOL)
-        with open(self.arena_config_save_dir(), "wb") as handle: # Save a copy in the arena
+        with open(self.arena_save_dir(), "wb") as handle: # Save a copy in the arena
             pickle.dump(self.config, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     def save_model(self, candidate):

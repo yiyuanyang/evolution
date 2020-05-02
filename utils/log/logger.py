@@ -241,7 +241,7 @@ class Logger(object):
             log=log
         )
 
-        return round(global_accuracy,2), accuracy_scores
+        return global_accuracy, accuracy_scores
 
 
     def _log_f1(self, epoch, ground_truth, prediction):  
@@ -363,7 +363,7 @@ class Logger(object):
             self._log_epoch_metrics(epoch, ground_truth, prediction, loss)
 
         self.stats[self.phase]["epoch"].append(epoch)
-        self.stats[self.phase]["global_accuracy"].append(global_accuracy)
+        self.stats[self.phase]["global_accuracy"].append(round(global_accuracy, 2))
         self.stats[self.phase]["accuracy"].append(accuracy)
         self.stats[self.phase]["global_recall"].append(global_recall)
         self.stats[self.phase]["recall"].append(recall)
@@ -479,11 +479,11 @@ class Logger(object):
 
 
     def log_elimination(self, survived, eliminated, value_dict, reason):
-        survived = {arena_id: value_dict[arena_id] for arena_id in eliminated}
+        survived = {arena_id: value_dict[arena_id] for arena_id in survived}
         eliminated = {arena_id: value_dict[arena_id] for arena_id in eliminated}
-        self._log("Eliminated by {reason}".format(reason))
-        self._log("Survived Value Pairs {survived}".format(survived))
-        self._log("Eliminated Value Pairs {eliminated}".format(eliminated))
+        self._log("Eliminated by {reason}".format(reason=reason))
+        self._log("Survived Value Pairs {survived}".format(survived=survived))
+        self._log("Eliminated Value Pairs {eliminated}".format(eliminated=eliminated))
 
     
     def log_round_stats(self, round, accuracy, loss):

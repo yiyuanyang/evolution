@@ -10,9 +10,9 @@ basic_config: {
 data_config: {
   data_dir: "D:\\datasets\\cifar-10",
   train_data: [
-    "data_batch_1",
-    "data_batch_2",
-    "data_batch_3",
+    #"data_batch_1",
+    #"data_batch_2",
+    #"data_batch_3",
     "data_batch_4"
   ],
   eval_data: ["data_batch_5"],

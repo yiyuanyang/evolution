@@ -6,6 +6,7 @@
 
 from Evolution.arena.model_candidate import ModelCandidate, gen_model_candidate_config
 from Evolution.utils.lineage.lineage_tree import Lineage
+import numpy as np
 import pickle
 import pandas as pd
 import os
@@ -114,7 +115,9 @@ class ArenaMaintainer(object):
         with open(arena_config_save_dir, 'rb') as handle:
             return ModelCandidate(pickle.load(handle))
     
-    def init_model_candidate(self, arena_id, model_id, lineage = None):
+    def init_model_candidate(self, arena_id, model_id, lineage = None, shield = None):
+        if shield is None:
+            shield = self.shield_epoch()
         if lineage is None:
             lineage = Lineage(model_id, None, None)
         config = gen_model_candidate_config(
@@ -126,8 +129,8 @@ class ArenaMaintainer(object):
             model_config=self.model_config(),
             backprop_config=self.backprop_config(),
             random_seed=self.random_seed() + model_id,
-            age_left = self.max_round_per_model(),
-            shield = self.shield_epoch(),
+            age_left = self.max_round_per_model() + np.random.choice(self.age_variation()),
+            shield = shield,
             lineage = lineage
         )
         mc = ModelCandidate(config)
@@ -153,8 +156,8 @@ class ArenaMaintainer(object):
 
     def eliminate_by_accuracy(self, arena, logger):
         accuracies = arena.get_eval_accuracies()
-        raw_accuracies = [value for key, value in accuracies.items()].sort()
-        cut_off = raw_accuracies[int(len(raw_accuracies)*self.elimination_rate())]
+        raw_accuracies = sorted([value for key, value in accuracies.items()])
+        cut_off = raw_accuracies[int(round(len(raw_accuracies)*self.elimination_rate()))]
         shielded = arena.get_shielded_ids()
         survived = []
         eliminated = []
@@ -173,9 +176,9 @@ class ArenaMaintainer(object):
         eval_save_dir = self.create_file(os.path.join(self.arena_save_dir(), "eval_stats.csv"))
         test_save_dir = self.create_file(os.path.join(self.arena_save_dir(), "test_stats.csv"))
         if self.use_existing_model():
-            train_stats_dict = pd.read_csv(train_save_dir, index=False).to_dict()
-            eval_stats_dict = pd.read_csv(eval_save_dir, index=False).to_dict()
-            test_stats_dict = pd.read_csv(test_save_dir, index=False).to_dict()
+            train_stats_dict = pd.read_csv(train_save_dir).to_dict()
+            eval_stats_dict = pd.read_csv(eval_save_dir).to_dict()
+            test_stats_dict = pd.read_csv(test_save_dir).to_dict()
         else:
             train_stats_dict = self.init_stats_dict()
             eval_stats_dict = self.init_stats_dict()

@@ -49,12 +49,19 @@ def gen_model_candidate_config(
 class ModelCandidate(object):
     def __init__(
         self,
-        config
+        config = None,
+        arena_save_dir = None,
+        arena_id = None,
     ):
-        self.mm = ModelMaintainer(config)
-        self.device = torch.device(config["device"])
-        if not os.path.exists(self.mm.save_dir()):
-            os.system("mkdir " + self.mm.save_dir())
+        assert config is not None or (arena_save_dir is not None and arena_id is not None), "Must have non-null argument"
+        if config is None:
+            self.mm = ModelMaintainer(arena_save_dir, arena_id)
+            self.device = self.device()
+        else:
+            self.mm = ModelMaintainer(config)
+            self.device = self.mm.device()
+            if not os.path.exists(self.mm.save_dir()):
+                os.system("mkdir " + self.mm.save_dir())
         self.logger = Logger(self.mm.save_dir())
         if not self.mm.model_exists(self):
             self.load_model()
@@ -88,7 +95,7 @@ class ModelCandidate(object):
         epoch_per_round,
         data_loaders
     ):
-        assert (self.mm.epoch() - epoch) >= 0 and (self.mm.epoch() - epoch) < epoch_per_round, "Mismatch between model candidate epoch and arena epcoh" 
+        assert (self.mm.epoch() - epoch) >= -1 and (self.mm.epoch() - epoch) < epoch_per_round, "Mismatch between model candidate epoch and arena epcoh" 
         """
             Load in the model, perform epochs_per_round epochs of backpropagation
             Save the model and return performance
