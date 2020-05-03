@@ -14,6 +14,8 @@ class ModelConfigManager(object):
         self.config = config
         if "device" not in self.config.keys():
             self.config["device"] = "cuda"
+        if "accuracies" not in self.config.keys():
+            self.init_stats()
 
     """
     Getter Functions
@@ -42,7 +44,7 @@ class ModelConfigManager(object):
         return self.config["age_left"]
 
     def shield(self):
-        return self.config["shield"]
+        return self.config["shield_epoch"]
     
     def random_seed(self):
         return self.config["random_seed"]
@@ -62,11 +64,17 @@ class ModelConfigManager(object):
     def model_save_dir(self):
         return self.config["model_save_dir"]
 
-    def accuracies(self, phase):
+    def accuracy(self, phase):
         return self.config["accuracies"][phase]
     
+    def cur_accuracy(self, phase):
+        return self.config["accuracies"][phase][self.epoch()]
+
     def loss(self, phase):
         return self.config["losses"][phase]
+
+    def cur_loss(self, loss):
+        return self.config["losses"][phase][self.epoch()]
 
     """
     Setters
@@ -77,8 +85,12 @@ class ModelConfigManager(object):
 
     def epoch_step(self):
         self.config["epoch"] +=1
-        if self.config["shield"] > 0:
-            self.config["shield"] -= 1
+        if self.config["shield_epoch"] > 0:
+            self.config["shield_epoch"] -= 1
+
+    def init_stats(self):
+        self.config["accuracies"] = {0:{}, 1:{}, 2:{}}
+        self.config["losses"] = {0:{}, 1:{}, 2:{}}
 
     def set_accuracy(self, phase, accuracy):
         self.config["accuracies"][phase][self.epoch()] = accuracy

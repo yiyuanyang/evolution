@@ -63,9 +63,6 @@ class ArenaMaintainer(object):
     def num_models(self):
         return self.evolution_config("num_models")
 
-    def load_from_models(self):
-        return self.evolution_config("load_from_models")
-
     def elimination_rate(self):
         return self.evolution_config("elimination_rate")
         
@@ -151,8 +148,8 @@ class ArenaMaintainer(object):
 
 
     def _update_stats(self, stats_dict, arena, phase):
-        accuracies = arena.get_accuracies(phase)
-        losses = arena.get_losses(phase)
+        accuracies = arena.get_accuracy(phase)
+        losses = arena.get_loss(phase)
         if self.epoch() not in stats_dict["epoch"]:
             stats_dict["epoch"].append(self.epoch())
             for arena_id, accuracy in accuracies.items():

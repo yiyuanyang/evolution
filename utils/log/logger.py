@@ -493,8 +493,8 @@ class Logger(object):
     def log_model_activity(self, activity, model_candidate):
         self._log("{activity} for Arena ID: {arena_id}, Model ID: {model_id}".format(
             activity=activity,
-            arena_id=model_candidate.mm.arena_id(),
-            model_id=model_candidate.mm.model_id()
+            arena_id=model_candidate.mcm.arena_id(),
+            model_id=model_candidate.mcm.model_id()
         )
     )
 

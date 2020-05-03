@@ -45,11 +45,11 @@ class Arena(object):
     def get_shielded_ids(self):
         return {model_candidate.mcm.arena_id(): model_candidate.mcm.shield()>0 for arena_id, model_candidate in self.model_candidates.items() if model_candidate is not None}
 
-    def get_accuracies(self, phase = 0):
-        return {model_candidate.mcm.arena_id(): model_candidate.mcm.accuracy(phase, self.am.epoch()) for arena_id, model_candidate in self.model_candidates.items() if model_candidate is not None}
+    def get_accuracy(self, phase = 0):
+        return {model_candidate.mcm.arena_id(): model_candidate.mcm.cur_accuracy(phase, self.am.epoch()) for arena_id, model_candidate in self.model_candidates.items() if model_candidate is not None}
 
-    def get_losses(self, phase = 0):
-        return {model_candidate.mcm.arena_id(): model_candidate.mcm.loss(phase, self.am.epoch()) for arena_id, model_candidate in self.model_candidates.items() if model_candidate is not None}
+    def get_loss(self, phase = 0):
+        return {model_candidate.mcm.arena_id(): model_candidate.mcm.cur_loss(phase, self.am.epoch()) for arena_id, model_candidate in self.model_candidates.items() if model_candidate is not None}
 
     def eliminate(self):
         accuracy_elimination_list = self.am.eliminate_by_accuracy(self, self.logger)
