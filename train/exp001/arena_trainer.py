@@ -18,7 +18,6 @@ import torch.nn.functional as F
 from sklearn import metrics
 
 
-
 class Trainer(object):
     """
         This is for arena

@@ -176,6 +176,7 @@ class ArenaMaintainer(object):
             else:
                 survive_list.append(arena_id)
         logger.log_elimination(survive_list, eliminate_list, accuracies, "Performance")
+        return eliminate_list
 
     
     def update_stats(self, arena):
@@ -190,38 +191,40 @@ class ArenaMaintainer(object):
             train_stats_dict = self.init_stats_dict()
             eval_stats_dict = self.init_stats_dict()
             test_stats_dict = self.init_stats_dict()
-        ## TODO: Use get_accuracies with phase next time
-        train_stats_dict = pd.DataFrame.from_dict(self._update_stats(train_stats_dict, arena.get_train_accuracies(), arena.get_train_losses()))
-        eval_stats_dict = pd.DataFrame.from_dict(self._update_stats(eval_stats_dict, arena.get_eval_accuracies(), arena.get_eval_losses()))
-        test_stats_dict = pd.DataFrame.from_dict(self._update_stats(test_stats_dict, arena.get_test_accuracies(), arena.get_test_losses()))
+        train_stats_dict = self._update_stats(stats_dict=train_stats_dict, arena=arena, phase=0)
+        eval_stats_dict = self._update_stats(stats_dict=eval_stats_dict, arena=arena, phase=1)
+        test_stats_dict = self._update_stats(stats_dict=test_stats_dict, arena=arena, phase=2)
         train_stats_dict.to_csv(train_save_dir, index = False)
         eval_stats_dict.to_csv(eval_save_dir, index = False)
         test_stats_dict.to_csv(test_save_dir, index = False)
 
-    def _update_stats(self, stats_dict, accuracies, losses):
-        if self.epoch() not in stats_dict["Epoch"]:
-            stats_dict["Epoch"].append(self.epoch())
+
+    def _update_stats(self, stats_dict, arena, phase):
+        accuracies = arena.get_accuracies(phase)
+        losses = arena.get_losses(phase)
+        if self.epoch() not in stats_dict["epoch"]:
+            stats_dict["epoch"].append(self.epoch())
             for arena_id, accuracy in accuracies.items():
-                stats_dict["ID: " + str(int(arena_id)) + " accuracy"].append(accuracy)
-                stats_dict["ID: " + str(int(arena_id)) + " loss"].append(losses[arena_id])
-        return stats_dict
+                stats_dict["id: " + str(int(arena_id)) + " accuracy"].append(accuracy)
+                stats_dict["id: " + str(int(arena_id)) + " loss"].append(losses[arena_id])
+        return pd.DataFrame.from_dict(stats_dict)
+
 
     def load_dataframe(self, df):
-        ## TODO: make names smaller clases (eg. Epoch -> epoch in next experiment) 
         stats_dict = dict()
-        stats_dict["Epoch"] = df["Epoch"].tolist()
+        stats_dict["epoch"] = df["epoch"].tolist()
         for arena_id in range(self.num_models()):
-            col_name = "ID: " + str(int(arena_id))
+            col_name = "id: " + str(int(arena_id))
             stats_dict[col_name + " accuracy"] = df[col_name + " accuracy"].tolist()
             stats_dict[col_name + " loss"] = df[col_name + " loss"].tolist()
         return stats_dict
 
     def init_stats_dict(self):
         stats_dict = dict()
-        stats_dict["Epoch"] = []
+        stats_dict["epoch"] = []
         for arena_id in range(self.num_models()):
-            stats_dict["ID: " + str(int(arena_id)) + " accuracy"] = []
-            stats_dict["ID: " + str(int(arena_id)) + " loss"] = []
+            stats_dict["id: " + str(int(arena_id)) + " accuracy"] = []
+            stats_dict["id: " + str(int(arena_id)) + " loss"] = []
         return stats_dict
 
 

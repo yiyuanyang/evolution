@@ -27,7 +27,7 @@ class ModelCandidate(object):
     def config(self):
         return self.mcm.get_config()
 
-    def enter_arena(self, arena_save_dir, arena_id, epoch):
+    def enter_arena(self, arena_id, epoch):
         # ** Only For New Model Candidates, Rather than loading Old Ones
         # ** The Epoch Should Be Same As The One It Replaces
         self.mcm.enter_arena(arena_id=arena_id, epoch=epoch)
@@ -35,7 +35,6 @@ class ModelCandidate(object):
         self.mfm.save_snapshot(self)
         self.mfm.unload_model_optimizer(self)
         return self.config()
-        # TODO In The Arena, Save The Config To the Arena Folder
 
     def run_round(
         self,
