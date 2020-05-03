@@ -11,9 +11,9 @@ from torch.utils import data
 import numpy as numpy
 from tqdm import tqdm
 from Evolution.model.models.resnet.arena_resnet import gen_model
-from Evolution.train.exp001.experiment_preparer import ExperimentPreparer
+from Evolution.trainer.exp001.experiment_preparer import ExperimentPreparer
 from Evolution.data.CIFAR10.CIFAR10_dataset import CIFAR10Dataset
-from Evolution.arena.arena import Arena
+from Evolution.utils.arena.arena import Arena
 import torch.nn.functional as F
 from sklearn import metrics
 

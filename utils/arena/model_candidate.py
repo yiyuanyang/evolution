@@ -7,8 +7,8 @@
 import os
 import torch
 from torch import nn
-from Evolution.arena.model_config_manager import ModelConfigManager
-from Evolution.arena.model_file_manager import ModelFileManager
+from Evolution.utils.arena.model_config_manager import ModelConfigManager
+from Evolution.utils.arena.model_file_manager import ModelFileManager
 from Evolution.utils.lineage.lineage_tree import Lineage
 from Evolution.utils.log.logger import Logger
 import pickle

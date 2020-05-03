@@ -4,7 +4,7 @@
     Date: May 2nd 2020
 """
 
-from Evolution.arena.model_candidate import ModelCandidate
+from Evolution.utils.arena.model_candidate import ModelCandidate
 from Evolution.utils.lineage.lineage_tree import Lineage
 import numpy as np
 import pickle

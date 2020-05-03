@@ -11,7 +11,7 @@ import Evolution.model.models.resnet.arena_resnet as arena_resnet
 from Evolution.model.models.resnet.arena_resnet import gen_model
 from Evolution.utils.factories.model_candidate_factory import ModelCandidateFactory
 from Evolution.utils.log.logger import Logger
-from Evolution.arena.arena_maintainer import ArenaMaintainer
+from Evolution.utils.arena.arena_maintainer import ArenaMaintainer
 from sklearn import metrics
 from Evolution.utils.lineage.lineage_tree import Lineage
 import numpy as np
