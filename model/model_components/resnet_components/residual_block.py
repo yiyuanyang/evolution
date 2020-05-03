@@ -6,7 +6,7 @@
 
 import torch.nn as nn
 import torch
-from Evolution.survival.breed import model_breeding
+from Evolution.utils.breed import model_breeding
 
 class BasicBlock(torch.nn.Module):
     """

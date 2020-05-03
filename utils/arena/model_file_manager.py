@@ -11,7 +11,12 @@ import os
 
 class ModelFileManager(object):
     def __init__(self, config):
-        self.model_save_dir = config["model_save_dir"]
+        self.model_save_dir = self.create_dir_if_not_exists(config["model_save_dir"])
+
+    def create_dir_if_not_exists(self, directory):
+        if not os.path.exists(directory):
+            os.system("mkdir " + directory)
+        return directory
 
     def _model_dir(self, epoch):
         return os.path.join(self.model_save_dir, str(epoch) + "_model.pt") 

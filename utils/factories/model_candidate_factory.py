@@ -61,7 +61,7 @@ class ModelCandidateFactory(object):
             "model_save_dir": os.path.join(self.all_model_save_dir, str(model_id)),
             "arena_save_dir": self.arena_save_dir,
             "model_config": self.train_config["model_config"],
-            "backprop_config": self.train_config["evolution_config"],
+            "backprop_config": self.train_config["backprop_config"],
             "random_seed": evolution_config["random_seed"],
             "age_left": evolution_config["max_round_per_model"] + \
                 np.random.choice(list(range(-evolution_config["age_variation"], evolution_config["age_variation"]))),

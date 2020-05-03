@@ -30,26 +30,26 @@ class Arena(object):
             if self.am.evolution_config("use_existing_model"):
                 self.model_candidates[arena_id] = self.mcf.load_model_candidate(arena_id=arena_id)
             else:
-                mc = self.mcf.gen_model_candidate(shield=0)
+                mc, _ = self.mcf.gen_model_candidate(shield=0) # ** Ignored the returned model_id
                 self.mcf.enter_arena(self, mc, arena_id)
 
     def get_model_ids(self):
-        return [model_candidate.mm.model_id() for arena_id, model_candidate in self.model_candidates.items()]
+        return [model_candidate.mcm.model_id() for arena_id, model_candidate in self.model_candidates.items()]
 
     def get_arena_ids(self):
-        return [model_candidate.mm.arena_id() for arena_id, model_candidate in self.model_candidates.items()]
+        return [model_candidate.mcm.arena_id() for arena_id, model_candidate in self.model_candidates.items()]
 
     def get_model_ages(self):
-        return {model_candidate.mm.arena_id(): model_candidate.mm.age_left() for arena_id, model_candidate in self.model_candidates.items() if model_candidate is not None}
+        return {model_candidate.mcm.arena_id(): model_candidate.mcm.age_left() for arena_id, model_candidate in self.model_candidates.items() if model_candidate is not None}
 
     def get_shielded_ids(self):
-        return {model_candidate.mm.arena_id(): model_candidate.mm.shield()>0 for arena_id, model_candidate in self.model_candidates.items() if model_candidate is not None}
+        return {model_candidate.mcm.arena_id(): model_candidate.mcm.shield()>0 for arena_id, model_candidate in self.model_candidates.items() if model_candidate is not None}
 
     def get_accuracies(self, phase = 0):
-        return {model_candidate.mm.arena_id(): model_candidate.mm.accuracy(phase, self.am.epoch()) for arena_id, model_candidate in self.model_candidates.items() if model_candidate is not None}
+        return {model_candidate.mcm.arena_id(): model_candidate.mcm.accuracy(phase, self.am.epoch()) for arena_id, model_candidate in self.model_candidates.items() if model_candidate is not None}
 
     def get_losses(self, phase = 0):
-        return {model_candidate.mm.arena_id(): model_candidate.mm.loss(phase, self.am.epoch()) for arena_id, model_candidate in self.model_candidates.items() if model_candidate is not None}
+        return {model_candidate.mcm.arena_id(): model_candidate.mcm.loss(phase, self.am.epoch()) for arena_id, model_candidate in self.model_candidates.items() if model_candidate is not None}
 
     def eliminate(self):
         accuracy_elimination_list = self.am.eliminate_by_accuracy(self, self.logger)

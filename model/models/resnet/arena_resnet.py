@@ -7,7 +7,7 @@
 import torch
 import torch.nn as nn
 from Evolution.model.model_components.resnet_components.residual_block import BasicBlock, Bottleneck
-from Evolution.survival.breed import model_breeding
+from Evolution.utils.breed import model_breeding
 from Evolution.utils.lineage.lineage_tree import Lineage
 from Evolution.utils.weights_understanding.func import func
 import copy
