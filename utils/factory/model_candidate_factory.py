@@ -54,8 +54,6 @@ class ModelCandidateFactory(object):
                             shield=None,
                             parent_1_lineage=None,
                             parent_2_lineage=None):
-        # ** Basic Settings Other Than Arena ID and Epoch
-        # ** Will Assign These When We Place the Candidate Into Arena
         model_id = self._new_model_id()
         evolution_config = self.train_config["evolution_config"]
         random_seed = evolution_config["random_seed"]
@@ -90,9 +88,9 @@ class ModelCandidateFactory(object):
         }
         return ModelCandidate(config), model_id
 
-    def enter_arena(self, arena, model_candidate, arena_id):
+    def enter_arena(self, arena, model_candidate, arena_id, new_model=False):
         epoch = arena.am.epoch() - 1
-        config = model_candidate.enter_arena(arena_id, epoch)
+        config = model_candidate.enter_arena(arena_id, epoch, new_model)
         if arena_id in arena.model_candidates.keys() \
                 and arena.model_candidates[arena_id] is not None:
             del arena.model_candidates[arena_id]

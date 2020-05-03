@@ -4,28 +4,27 @@
     Date: April 29th 2020
 """
 
-from Evolution.utils.factories.model_candidate_factory \
+from Evolution.utils.factory.model_candidate_factory \
     import ModelCandidateFactory
-from Evolution.utils.log.logger import Logger
-from Evolution.utils.arena.arena_maintainer import ArenaMaintainer
+from Evolution.utils.logger.logger import Logger
+from Evolution.utils.arena.arena_manager import ArenaManager
 from Evolution.utils.lineage.lineage_tree import Lineage
 import numpy as np
 
 
 class Arena(object):
     def __init__(self, data_loaders, train_config, save_config):
-        self.am = ArenaMaintainer(data_loaders, train_config, save_config)
+        self.am = ArenaManager(data_loaders, train_config, save_config)
         self.mcf = ModelCandidateFactory(train_config, save_config)
         self.model_candidates = {}
         self.logger = Logger(self.am.save_dir())
-        np.random.seed(self.am.random_seed()-1)
         for arena_id in range(self.am.num_models()):
             if self.am.evolution_config("use_existing_model"):
                 self.model_candidates[arena_id] = \
                     self.mcf.load_model_candidate(arena_id=arena_id)
             else:
                 mc, _ = self.mcf.gen_model_candidate(shield=0)
-                self.mcf.enter_arena(self, mc, arena_id)
+                self.mcf.enter_arena(self, mc, arena_id, new_model=True)
 
     def get_model_ids(self):
         return [
@@ -44,25 +43,23 @@ class Arena(object):
             for arena_id, model_candidate in self.model_candidates.items()
             if model_candidate is not None}
 
-    def get_shielded_ids(self):
+    def get_shields(self):
         return {
             model_candidate.mcm.arena_id(): model_candidate.mcm.shield() > 0
             for arena_id, model_candidate in self.model_candidates.items()
             if model_candidate is not None}
 
-    def get_accuracy(self, phase=0):
+    def get_accuracy(self, phase=1):
         return {
-            model_candidate.mcm.arena_id(): model_candidate.mcm.cur_accuracy(
-                phase,
-                self.am.epoch())
+            model_candidate.mcm.arena_id():
+                model_candidate.mcm.cur_accuracy(phase)
             for arena_id, model_candidate in self.model_candidates.items()
             if model_candidate is not None}
 
-    def get_loss(self, phase=0):
+    def get_loss(self, phase=1):
         return {
-            model_candidate.mcm.arena_id(): model_candidate.mcm.cur_loss(
-                phase,
-                self.am.epoch())
+            model_candidate.mcm.arena_id():
+                model_candidate.mcm.cur_loss(phase)
             for arena_id, model_candidate in self.model_candidates.items()
             if model_candidate is not None}
 
@@ -137,13 +134,19 @@ class Arena(object):
             self.run_round()
             self.am.epoch_step(self.am.epoch_per_round() - 1)
             self.am.update_stats(self)
-            np.random.seed(self.am.random_seed()-1)
             elimination_list = self.eliminate()
-            new_candidates = self.breed(elimination_list)
-            self.eliminate_and_replace(new_candidates)
+            new_candidates = None
+            if elimination_list is not None:
+                new_candidates = self.breed(elimination_list)
+                self.eliminate_and_replace(new_candidates)
+            self.end_of_round_analysis(eliminated_list, new_candidates)
             self.am.epoch_step(1)
 
     def eliminate_and_replace(self, new_candidates):
-        for arena_id, candidate in new_candidates:
+        for arena_id, candidate in new_candidates.items():
+            candidate.enter_arena(arena_id, self.am.epoch(), new_model=False)
             del self.model_candidates[arena_id]
             self.model_candidates[arena_id] = candidate
+
+    def end_of_round_analysis(self, eliminated_list, new_candidates=None):
+        self.logger.log_end_of_round_state(self, eliminated_list, new_candidates)

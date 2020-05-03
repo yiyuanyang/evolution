@@ -1,5 +1,6 @@
 """
-    Content: This Class Manages the loading and saving of models and configs within its own folder
+    Content: This Class Manages the loading and saving
+        of models and configs within its own folder
     Author: Yiyuan Yang
     Date: May 2nd 2020
 """
@@ -9,9 +10,11 @@ import pickle
 import torch
 import os
 
+
 class ModelFileManager(object):
     def __init__(self, config):
-        self.model_save_dir = self.create_dir_if_not_exists(config["model_save_dir"])
+        self.model_save_dir = self.create_dir_if_not_exists(
+            config["model_save_dir"])
 
     def create_dir_if_not_exists(self, directory):
         if not os.path.exists(directory):
@@ -19,19 +22,29 @@ class ModelFileManager(object):
         return directory
 
     def _model_dir(self, epoch):
-        return os.path.join(self.model_save_dir, str(epoch) + "_model.pt") 
-
+        return os.path.join(self.model_save_dir, str(epoch) + "_model.pt")
 
     def _optim_dir(self, epoch):
         return os.path.join(self.model_save_dir, str(epoch) + "_optim.pt")
-
 
     def _config_dir(self, epoch):
         return os.path.join(self.model_save_dir, "config.pt")
 
     def save_config(self, config):
         epoch = config["epoch"]
-        with open(self._config_dir(epoch), "wb") as handle: # Save a copy in the model's own folder
+        with open(self._config_dir(epoch), "wb") as handle:
+            pickle.dump(config, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    def save_arena_config(self, candidate):
+        config = candidate.config()
+        arena_id = candidate.mcm.arena_id()
+        arena_save_dir = os.path.join(
+            os.path.dirname(os.path.dirname(self.model_save_dir)),
+            "arena")
+        arena_config_save_dir = os.path.join(
+            arena_save_dir,
+            str(arena_id) + "_config.pickle")
+        with open(arena_config_save_dir, "wb") as handle:
             pickle.dump(config, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     def model_exists(self, epoch):
@@ -39,11 +52,9 @@ class ModelFileManager(object):
 
     def gen_model_optimizer(self, config):
         model = gen_model(config["model_config"]).to(config["device"])
-        optim = torch.optim.Adam(
-            model.parameters(),
-            lr=config["backprop_config"]["learning_rate"],
-            betas=(0.9,0.999)
-        ) 
+        optim = torch.optim.Adam(model.parameters(),
+                                 lr=config["backprop_config"]["learning_rate"],
+                                 betas=(0.9, 0.999))
         return model, optim
 
     def new_model_optimizer(self, candidate):
@@ -61,7 +72,7 @@ class ModelFileManager(object):
         optim.load_state_dict(torch.load(self._optim_dir(epoch)))
         candidate.model = model
         candidate.optim = optim
-    
+
     def unload_model_optimizer(self, candidate):
         with torch.no_grad():
             model = candidate.model
@@ -74,7 +85,8 @@ class ModelFileManager(object):
     def save_model_optimizer(self, candidate):
         config = candidate.config()
         epoch = config["epoch"]
-        assert candidate.model is not None and candidate.optim is not None, "Cannot Save Non Existent Model and Optimizer"
+        assert candidate.model is not None and candidate.optim is not None, \
+            "Cannot Save Non Existent Model and Optimizer"
         torch.save(candidate.model.state_dict(), self._model_dir(epoch))
         torch.save(candidate.optim.state_dict(), self._optim_dir(epoch))
 
@@ -82,3 +94,7 @@ class ModelFileManager(object):
         config = candidate.config()
         self.save_model_optimizer(candidate)
         self.save_config(config)
+
+    def save_epoch(self, candidate):
+        self.save_snapshot(candidate)
+        self.save_arena_config(candidate)

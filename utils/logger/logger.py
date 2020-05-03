@@ -4,16 +4,17 @@
     Date: April. 18th 2020
 """
 
-import os
-import sys
-import yaml
-from sklearn import metrics
-import json
-import pandas as pd
-import numpy as np
-from Evolution.utils.weights_understanding.func import func
+
+from Evolution.utils.weights import weight_stats
 from Evolution.model.model_components.resnet_components.residual_block \
     import BasicBlock, Bottleneck
+from scipy import special as sp
+from sklearn import metrics
+import pandas as pd
+import numpy as np
+import yaml
+import json
+import os
 
 
 class Logger(object):
@@ -23,12 +24,11 @@ class Logger(object):
                  print_to_console=True):
         self.messages = []
         self.dump_frequency = dump_frequency
-        self.phase = 1
+        self.phase = 0
         self.print_to_console = print_to_console
 
-        if not os.path.exists(logger_save_dir):
-            print("FATAL: Save Directory Does not Exist")
-            sys.exit()
+        assert os.path.exists(logger_save_dir), \
+            "FATAL: Save Directory Does not Exist"
 
         self.logger_save_dir = [
             os.path.join(logger_save_dir, "train.log"),
@@ -42,46 +42,40 @@ class Logger(object):
             os.path.join(logger_save_dir, "test.csv")
         ]
         self.stats = [
-            {
-                "epoch": [],
-                "global_accuracy": [],
-                "accuracy": [],
-                "global_recall": [],
-                "recall": [],
-                "global_precision": [],
-                "precision": [],
-                "global_f1": [],
-                "f1": [],
-                "loss": []
-            },
-            {
-                "epoch": [],
-                "global_accuracy": [],
-                "accuracy": [],
-                "global_recall": [],
-                "recall": [],
-                "global_precision": [],
-                "precision": [],
-                "global_f1": [],
-                "f1": [],
-                "loss": []
-            },
-            {
-                "epoch": [],
-                "global_accuracy": [],
-                "accuracy": [],
-                "global_recall": [],
-                "recall": [],
-                "global_precision": [],
-                "precision": [],
-                "global_f1": [],
-                "f1": [],
-                "loss": []
-            },
-        ]
+            self._gen_stats_container(),
+            self._gen_stats_container(),
+            self._gen_stats_container()]
+
+    def _gen_stats_container(self):
+        """return a container for stats
+
+        Returns:
+            {dict} -- container for stats
+        """
+        return {
+            "epoch": [],
+            "global_accuracy": [],
+            "accuracy": [],
+            "global_recall": [],
+            "recall": [],
+            "global_precision": [],
+            "precision": [],
+            "global_f1": [],
+            "f1": [],
+            "loss": []
+        }
 
     # Basic helper functions
     def _log(self, log, force_dump=False):
+        """Add Message To Queue, Dump If Necessary
+
+        Arguments:
+            log {string} -- message to be logged
+
+        Keyword Arguments:
+            force_dump {bool} -- whether to force print to console
+                (default: {False})
+        """
         self.messages.append(log)
         if force_dump or len(self.messages) >= self.dump_frequency:
             self._dump()
@@ -89,66 +83,69 @@ class Logger(object):
             print(log)
 
     def set_phase(self, epoch, phase):
+        """Logs the phase switching during train/eval/test
+
+        Arguments:
+            epoch {int} -- Current Epoch
+            phase {int} -- Phase: Train: 0, Eval: 1, Test: 2
+                Nothing prints to console during test
         """
-            Set current phase of logger
-        """
+
         if len(self.messages) != 0:
             self._dump()
-
         if phase != 2:
             self.print_to_console = True
-
         phases = ["Train", "Eval", "Test"]
         self.phase = phase
-
         self.log(
             "======================SWITCHING PHASE=========================")
         log = "LOGGING: Starting " + phases[phase] + " phase for epoch " + str(
             epoch)
-
         self._log(log=log)
-
         if phase == 2:
             self.print_to_console = False
 
     def _dump(self):
+        """Print Messages to console
         """
-            This saves logs to a file
-        """
+
         file = open(self.logger_save_dir[self.phase], "a")
         file.writelines(self.messages)
 
-    # Here are all the random logging functions
-    def fatal(self, message):
-        self._log(log="FATAL: " + message, force_dump=True)
-        sys.exit()
-
-    def warning(self, message):
-        self._log(log="WARNING: " + message)
-
     def log(self, message):
+        """Basic Logging
+
+        Arguments:
+            message {string} -- log message
+        """
+
         self._log(log="LOGGING: " + message)
 
     def log_learning_rate_change(self, epoch, cur, new):
+        """Logs changes in learning rate
+
+        Arguments:
+            epoch {int} -- Current Epoch
+            cur {float} -- Current Learning Rate
+            new {float} -- New Learning Rate
         """
-            Logs changes in learning rate
-        """
+
         log = ("LOGGING: Epoch " + str(epoch) +
                " , adjusted learning rate from " + str(cur) + " to " +
                str(new))
-
         self._log(log=log)
 
     def log_config(self, config_name, config):
-        """
-            This logs a config
-        """
-        log = "LOGGING: " + config_name + ": " + yaml.dump(config)
+        """Logs A Config
 
+        Arguments:
+            config_name {string} -- which is this config for?
+            config {dict()} -- config dictionary
+        """
+
+        log = "LOGGING: " + config_name + ": " + yaml.dump(config)
         self._log(log=log)
 
-    # ** =====================================================
-    # ** Data related logging
     def log_batch_result(self,
                          batch_index,
                          num_batches,
@@ -157,26 +154,52 @@ class Logger(object):
                          ground_truth,
                          loss,
                          top_n=5):
+        """Logs Result For Every Batch
+
+        Arguments:
+            batch_index {int} -- Index of current batch
+            num_batches {int} -- Total number of batches per epoch
+            prediction_prob {list[float]} -- Predicted Probability
+                for each class
+            prediction {list[float]} -- Assigning max to 1 and rest
+                to 0
+            ground_truth {list[long]} -- ground truth
+            loss {list[float]} -- calculated loss between
+                prediction_prob and ground_truth
+
+        Keyword Arguments:
+            top_n {int} -- if batch is too large, only log top_n
+                (default: {5})
         """
-            This logs a batch run's result
-        """
+
         prediction_prob = [
             self.round_to_4_decimal(item) for item in prediction_prob
         ]
+        prediction_softmax_string = \
+            [str(self.round_to_4_decimal(sp.softmax(item))) for item in prediction_prob]
+        prediction_softmax_string = "\n".join(
+            prediction_softmax_string[:top_n])
         prediction_string = [str(item) for item in prediction_prob]
         prediction_string = "\n".join(prediction_string[:top_n])
-        log = ("LOGGING: Batch " + str(batch_index) + "/" + str(num_batches) +
-               "\n Prediction Probability for top {top_n}: \n".format(
-                   top_n=top_n) + prediction_string + "\n Prediction:" +
-               str(prediction[:top_n]) + "\n Ground Truth: " +
-               str(ground_truth[:top_n]) + "\n Batch Loss: " + str(loss))
+        log = "LOGGING: Batch " + str(batch_index) + "/" + str(num_batches) + \
+            "\nFor First {top_n}".format(top_n=top_n) + \
+            "\n Prediction Prob: \n" + prediction_string + \
+            "\n Prediction Softmax: \n" + prediction_softmax_string + \
+            "\n Prediction:" + str(prediction[:top_n]) + \
+            "\n Ground Truth: " + str(ground_truth[:top_n]) + \
+            "\n Batch Loss: " + str(loss)
 
         self._log(log=log)
 
     def log_data(self, batch_index, data, label):
+        """Logs Shape and Value Of the Data
+
+        Arguments:
+            batch_index {int} -- Current Batch Index
+            data {ndarray} -- Data inputed into model
+            label {ndarray} -- ground truth
         """
-            This logs the shape and value of data
-        """
+
         log = ("LOGGING: Batch " + str(batch_index) + " Data Shape: " +
                str(list(data.shape)) + " Label Shape: " +
                str(list(label.shape)))
@@ -344,8 +367,8 @@ class Logger(object):
     # Model Related Logging
     def log_model(self, model):
         model_log = str(model)
-        self.log("===================")
-        self.log("Current Model Used:")
+        self.log("===================MODEL===================")
+        self.log("Current Model Structure:")
         self.log(model_log)
 
     def log_model_statistics(self, model, model_name, calculate_statistics):
@@ -355,8 +378,8 @@ class Logger(object):
     def log_residual_block_statistics(self, block):
         if isinstance(block, BasicBlock):
             self._log("Basicblock: ")
-            weight_statistics, grad_statistics = func.basic_block_statistics(
-                block)
+            weight_statistics, grad_statistics = \
+                weight_stats.basic_block_statistics(block)
         elif isinstance(block, Bottleneck):
             self._log("Bottleneck: ")
 
@@ -373,11 +396,11 @@ class Logger(object):
                 precision=2),
             min_val=np.format_float_scientific(
                 min_val.data.cpu().numpy(),
-                precision=2)) + \
-            " mean {mean_val} stdev {stdev}".format(
+                precision=2),
             range_val=np.format_float_scientific(
                 range_val.data.cpu().numpy(),
-                precision=2),
+                precision=2)) + \
+            " mean {mean_val} stdev {stdev}".format(
             mean_val=np.format_float_scientific(
                 mean_val.data.cpu().numpy(),
                 precision=2),
@@ -387,6 +410,7 @@ class Logger(object):
         self._log(msg)
 
     def log_breed(self, model_id_one, model_id_two, new_model_id):
+        self._log("=================BREEDING=================")
         self._log(
             "Model {model_id_one} and {model_id_two} generated {new_model_id}".
             format(model_id_one=model_id_one,
@@ -424,3 +448,51 @@ class Logger(object):
     def log_lineage(self, arena_id, lineage):
         self._log("Arena ID: {arena_id} has lineage: {lineage}".format(
             arena_id=arena_id, lineage=lineage))
+
+    def log_end_of_round_state(self, arena, eliminated, new_candidates=None):
+        self._log("==========================================================")
+        self._log("==================END OF ROUND ANALYSIS===================")
+        self._log("==========================================================")
+        cur_round = arena.rounds()
+        self._log("Round: {cur_round}".format(cur_round=cur_round))
+        accuracy = arena.get_accuracy()
+        loss = arena.get_loss()
+        age = arena.get_model_ages()
+        shielded = arena.get_shields()
+        self._log_performance_dict("Accuracy", accuracy, arena, reverse=True)
+        self._log_performance_dict("Loss", loss, arena, reverse=False)
+        self._log_performance_dict("Ages", age, arena, reverse=True)
+        self._log_performance_dict("Shielded", shielded, arena, reverse=True)
+        if new_candidates is not None:
+            eliminated_model_ids = [
+                arena.model_candidates[arena_id].mcm.model_id()
+                for arena_id in eliminated]
+            new_model_ids = [
+                candidate.mcm.model_id()
+                for candidate in new_candidates]
+            self._log("Elimating Models Of Arena ID: {arena_ids}".format(arena_ids=eliminated))
+            self._log("Their Model IDs: {model_ids}".format(model_ids=eliminated_model_ids))
+            self._log("New Replacing Model IDs: {model_ids}".format(model_ids=new_model_ids))
+        else:
+            self._log("Eliminated none of the models during this round")
+
+    def _log_performance_dict(
+        self,
+        metric_name,
+        performance_dict,
+        arena,
+        reverse=True
+    ):
+        self._log("====={metric_name}=====".format(metric_name))
+        arena_ids = list(performance_dict.keys())
+        model_ids = {
+            arena_id: arena.model_candidates[arena_id].mcm.model_id()
+            for arena_id in arena_ids}
+        performance_dict = sorted(performance_dict.values(), reverse=reverse)
+        for arena_id in arena_ids:
+            self._log("Arena ID: {arena_id} Model ID: ".format(arena_id=arena_id) +
+                      "{model_id} {metric_name}: {value}".format(
+                          arena_id=arena_id,
+                          model_id=model_ids[arena_id],
+                          metric_name=metric_name,
+                          value=str(performance_dict[arena_id])))

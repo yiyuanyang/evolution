@@ -9,7 +9,7 @@ import pandas as pd
 import os
 
 
-class ArenaMaintainer(object):
+class ArenaManager(object):
     def __init__(self, data_loaders, train_config, save_config):
         self.data_loaders = data_loaders
         self.train_config = train_config
@@ -101,7 +101,7 @@ class ArenaMaintainer(object):
 
     def eliminate_by_age(self, arena, logger):
         ages = arena.get_model_ages()
-        shielded = arena.get_shielded_ids()
+        shielded = arena.get_shields()
         survive_list = []
         eliminate_list = []
         for arena_id, age_left in ages.items():
@@ -114,11 +114,11 @@ class ArenaMaintainer(object):
         return eliminate_list
 
     def eliminate_by_accuracy(self, arena, logger):
-        accuracies = arena.get_eval_accuracies()
+        accuracies = arena.get_accuracy(phase=1)
         raw_accuracies = sorted([value for key, value in accuracies.items()])
         cut_off = raw_accuracies[int(
             round(len(raw_accuracies) * self.elimination_rate()))]
-        shielded = arena.get_shielded_ids()
+        shielded = arena.get_shields()
         survive_list = []
         eliminate_list = []
         for arena_id, accuracy in accuracies.items():

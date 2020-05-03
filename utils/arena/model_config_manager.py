@@ -4,10 +4,9 @@
     Date: April 30th 2020
 """
 
-from Evolution.model.models.resnet.arena_resnet import gen_model
 import pickle
-import torch
 import os
+
 
 class ModelConfigManager(object):
     def __init__(self, config):
@@ -20,6 +19,7 @@ class ModelConfigManager(object):
     """
     Getter Functions
     """
+
     def get_config(self):
         return self.config
 
@@ -30,30 +30,33 @@ class ModelConfigManager(object):
         return self.config["device"]
 
     def arena_id(self):
-        assert "arena_id" in self.config.keys(), "Arena ID Not Set For Current Candidate"
+        assert "arena_id" in self.config.keys(), \
+            "Arena ID Not Set For Current Candidate"
         return self.config["arena_id"]
 
     def epoch(self):
-        assert "epoch" in self.config.keys(), "Epoch Not Set For Current Candidate"
+        assert "epoch" in self.config.keys(), \
+            "Epoch Not Set For Current Candidate"
         return self.config["epoch"]
 
     def lineage(self):
         return self.config["lineage"]
-    
+
     def age_left(self):
         return self.config["age_left"]
 
     def shield(self):
         return self.config["shield_epoch"]
-    
+
     def random_seed(self):
         return self.config["random_seed"]
 
     def original_learning_rate(self):
-        return self.config["backprop_config"]["learning_rate"] 
+        return self.config["backprop_config"]["learning_rate"]
 
     def learning_rate(self):
-        return self.config["backprop_config"]["learning_rate"] * (self.config["backprop_config"]["gamma"]**self.epoch())
+        return self.config["backprop_config"]["learning_rate"] * \
+            (self.config["backprop_config"]["gamma"]**self.epoch())
 
     def gradient_clip(self):
         return self.config["backprop_config"]["gradient_clip"]
@@ -66,31 +69,33 @@ class ModelConfigManager(object):
 
     def accuracy(self, phase):
         return self.config["accuracies"][phase]
-    
+
     def cur_accuracy(self, phase):
         return self.config["accuracies"][phase][self.epoch()]
 
     def loss(self, phase):
         return self.config["losses"][phase]
 
-    def cur_loss(self, loss):
+    def cur_loss(self, phase):
         return self.config["losses"][phase][self.epoch()]
 
     """
     Setters
     """
+
     def aging(self):
-        assert self.config["age_left"] > 0, "Age Left Cannot go negative"
-        self.config["age_left"] -=1
+        assert self.config["age_left"] > 0, \
+            "Age Left Cannot go negative"
+        self.config["age_left"] -= 1
 
     def epoch_step(self):
-        self.config["epoch"] +=1
+        self.config["epoch"] += 1
         if self.config["shield_epoch"] > 0:
             self.config["shield_epoch"] -= 1
 
     def init_stats(self):
-        self.config["accuracies"] = {0:{}, 1:{}, 2:{}}
-        self.config["losses"] = {0:{}, 1:{}, 2:{}}
+        self.config["accuracies"] = {0: {}, 1: {}, 2: {}}
+        self.config["losses"] = {0: {}, 1: {}, 2: {}}
 
     def set_accuracy(self, phase, accuracy):
         self.config["accuracies"][phase][self.epoch()] = accuracy
@@ -99,7 +104,6 @@ class ModelConfigManager(object):
         self.config["losses"][phase][self.epoch()] = loss
 
     def enter_arena(self, arena_id, epoch):
-        # ** This is only used by other classes
         self.config["arena_id"] = arena_id
         self.config["epoch"] = epoch
 
@@ -109,10 +113,5 @@ class ModelConfigManager(object):
 
     def save_config(self):
         config_save_dir = os.path.join(self.model_save_dir(), "config.pickle")
-        with open(config_save_dir, "wb") as handle: # Save a copy in the model's own folder
+        with open(config_save_dir, "wb") as handle:
             pickle.dump(self.config, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-
-
-
-    
