@@ -1,3 +1,5 @@
 {
-    "python.pythonPath": "C:\\Users\\yangy\\Anaconda3\\envs\\computervision\\python.exe"
+    "python.pythonPath": "C:\\Users\\yangy\\Anaconda3\\envs\\computervision\\python.exe",
+    "python.linting.flake8Enabled": true,
+    "python.formatting.provider": "yapf"
 }
