@@ -164,22 +164,44 @@ class ResNet(nn.Module):
                 left_conv=self.conv1,
                 right_conv=other_net.conv1,
                 in_channels=self.in_channels,
+                kernel_size = temp.kernel_size[0],
+                stride= temp.stride[0],
                 out_channels=64,
                 policy=policy,
                 max_weight_mutation=max_weight_mutation
             )
             del temp
             temp = self.layer1
-            self.layer1 = self.layer1.breed(other_block=other_net.layer1, policy=policy, max_weight_mutation=max_weight_mutation)
+            self.layer1 = self.breed_layer(
+                self_layer=self.layer1, 
+                other_layer=other_net.layer1, 
+                policy=policy, 
+                max_weight_mutation=max_weight_mutation
+            )
             del temp
             temp = self.layer2
-            self.layer2 = self.layer1.breed(other_block=other_net.layer2, policy=policy, max_weight_mutation=max_weight_mutation)
+            self.layer2 = self.breed_layer(
+                self_layer=self.layer2, 
+                other_layer=other_net.layer2, 
+                policy=policy, 
+                max_weight_mutation=max_weight_mutation
+            )
             del temp
             temp = self.layer3
-            self.layer3 = self.layer1.breed(other_block=other_net.layer3, policy=policy, max_weight_mutation=max_weight_mutation)
+            self.layer3 = self.breed_layer(
+                self_layer=self.layer3, 
+                other_layer=other_net.layer3, 
+                policy=policy, 
+                max_weight_mutation=max_weight_mutation
+            )
             del temp
             temp = self.layer4
-            self.layer4 = self.layer1.breed(other_block=other_net.layer4, policy=policy, max_weight_mutation=max_weight_mutation)
+            self.layer4 = self.breed_layer(
+                self_layer=self.layer4, 
+                other_layer=other_net.layer4, 
+                policy=policy, 
+                max_weight_mutation=max_weight_mutation
+            )
             del temp
 
             # We are not changing the fully connected layer
@@ -188,6 +210,21 @@ class ResNet(nn.Module):
             logger.log("Child")
             self.log_weights(logger)
             return self
+
+
+    def breed_layer(self, self_layer, other_layer, policy, max_weight_mutation):
+
+        new_layers = []
+        for i in range(len(self_layer)):
+            new_layers.append(
+                self_layer[i].breed(
+                    other_block=other_layer[i], 
+                    policy=policy, 
+                    max_weight_mutation=max_weight_mutation
+                )
+            )
+        return nn.Sequential(*new_layers)
+
 
 
     def log_weights(self, logger):

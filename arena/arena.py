@@ -24,13 +24,13 @@ class Arena(object):
         self.am = ArenaMaintainer(data_loaders, train_config, save_config)
         self.model_candidates = {}
         self.logger = Logger(self.am.save_dir())
-        self.new_model_id = self.am.evolution_config("cur_arena_id")
+        self.new_model_id = self.am.evolution_config("cur_model_id")
         np.random.seed(self.am.random_seed()-1)
         for arena_id in range(self.am.num_models()):
             if self.am.evolution_config("use_existing_model"):
                 self.model_candidates[arena_id] = ModelCandidate(arena_save_dir=self.am.arena_save_dir(), arena_id=arena_id)
             else:
-                self.model_candidates[arena_id] = self.am.init_model_candidate(arena_id, self.gen_new_model_id(), shield = 0)
+                self.model_candidates[arena_id] = self.am.init_model_candidate(self.gen_new_model_id(), arena_id, shield = 0)
 
     def gen_new_model_id(self):
         model_id = self.new_model_id
@@ -71,8 +71,10 @@ class Arena(object):
         return [arena_id for arena_id in range(self.am.num_models()) if self.model_candidates[arena_id] is None]
 
     def eliminate(self):
-        self.am.eliminate_by_accuracy(self, self.logger)
-        self.am.eliminate_by_age(self, self.logger)
+        accuracy_elimination_list = self.am.eliminate_by_accuracy(self, self.logger)
+        age_elimination_list = self.am.eliminate_by_age(self, self.logger)
+        elimination_list = list(set(accuracy_elimination_list + age_elimination_list))
+        return elimination_list
 
     def breed(self):
         survived = self.get_arena_ids()
@@ -100,7 +102,7 @@ class Arena(object):
             self.model_candidates[parent_arena_id_1].mm.lineage(),
             self.model_candidates[parent_arena_id_2].mm.lineage()
         )
-        self.model_candidates[target_arena_id] = self.am.init_model_candidate(target_arena_id, new_model_id, new_lineage)
+        # ** First Store the Model
         self.model_candidates[target_arena_id].breed(
             other_candidate = self.model_candidates[parent_arena_id_2], 
             new_arena_id = target_arena_id,
@@ -108,8 +110,16 @@ class Arena(object):
             logger = logger,
             mutation_policy = self.am.mutation_policy(),
             max_weight_mutation = self.am.max_weight_mutation()
-        )
+        ) 
+        # ** Generate the New Candidate
+        new_candidate = self.am.init_model_candidate(
+            model_id=new_model_id,
+            lineage=new_lineage,
+            epoch = self.model_candidates[parent_arena_id_1].mm.epoch()
+            )
         self.logger.log_lineage(target_arena_id, self.model_candidates[target_arena_id].mm.lineage())
+        # ** Return the candidate and assign when all candidates are generated properly
+        return new_candidate
 
     def run_round(self):
         for arena_id in self.get_arena_ids():
@@ -124,8 +134,8 @@ class Arena(object):
             self.am.epoch_step(self.am.epoch_per_round() - 1)
             self.am.update_stats(self)
             np.random.seed(self.am.random_seed()-1)
-            self.eliminate()
-            self.breed()
+            elimination_list = self.eliminate()
+            new_candidates = self.breed()
             self.am.epoch_step(1)
 
     

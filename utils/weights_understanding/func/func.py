@@ -27,7 +27,7 @@ def tensor_statistics(
     return tensor_stats
 
 
-def basic_block_statistics(block, grad = True):
+def basic_block_statistics(block):
     """
         Given a residual basic block
         calculate its weight statistics
@@ -43,7 +43,7 @@ def basic_block_statistics(block, grad = True):
     )
     weight_statistics = tensor_statistics(weight)
 
-    if grad == True:
+    if conv1.weight.grad is not None:
         grad = torch.cat(
             [
                 torch.flatten(conv1.weight.grad), 

@@ -6,6 +6,7 @@
 
 from Evolution.arena.model_candidate import ModelCandidate, gen_model_candidate_config
 from Evolution.utils.lineage.lineage_tree import Lineage
+import math
 import numpy as np
 import pickle
 import pandas as pd
@@ -102,7 +103,7 @@ class ArenaMaintainer(object):
         self.cur_epoch += steps
     
     def rounds(self):
-        return self.epoch() // self.epoch_per_round() + 1
+        return math.ceil(self.epoch() / self.epoch_per_round())
     
     def cur_arena_id(self):
         return self.evolution_config("cur_arena_id")
@@ -115,15 +116,24 @@ class ArenaMaintainer(object):
         with open(arena_config_save_dir, 'rb') as handle:
             return ModelCandidate(pickle.load(handle))
     
-    def init_model_candidate(self, arena_id, model_id, lineage = None, shield = None):
-        if shield is None:
-            shield = self.shield_epoch()
+    def init_model_candidate(
+        self, 
+        model_id, 
+        arena_id = None, 
+        lineage = None,
+        epoch = None, 
+        shield = None
+    ):
         if lineage is None:
             lineage = Lineage(model_id, None, None)
+        if epoch is None:
+            epoch = self.epoch() - 1
+        if shield is None:
+            shield = self.shield_epoch()
         config = gen_model_candidate_config(
             arena_id=arena_id,
             model_id=model_id,
-            epoch=self.epoch() - 1,
+            epoch=epoch,
             save_dir=self.model_save_dir(),
             arena_save_dir=self.arena_save_dir(),
             model_config=self.model_config(),
@@ -142,33 +152,30 @@ class ArenaMaintainer(object):
     def eliminate_by_age(self, arena, logger):
         ages = arena.get_model_ages()
         shielded = arena.get_shielded_ids()
-        survived = []
-        eliminated = []
+        survive_list = []
+        eliminate_list = []
         for arena_id, age_left in ages.items():
             assert age_left >=0, "Age Left Should Not Got Negative"
             if age_left == 0 and not shielded[arena_id]:
-                del arena.model_candidates[arena_id]
-                arena.model_candidates[arena_id] = None
-                eliminated.append(arena_id)
+                eliminate_list.append(arena_id)
             else:
-                survived.append(arena_id)
-        logger.log_elimination(survived, eliminated, ages, "Age")
+                survive_list.append(arena_id)
+        logger.log_elimination(survive_list, eliminate_list, ages, "Age")
+        return eliminate_list
 
     def eliminate_by_accuracy(self, arena, logger):
         accuracies = arena.get_eval_accuracies()
         raw_accuracies = sorted([value for key, value in accuracies.items()])
         cut_off = raw_accuracies[int(round(len(raw_accuracies)*self.elimination_rate()))]
         shielded = arena.get_shielded_ids()
-        survived = []
-        eliminated = []
+        survive_list = []
+        eliminate_list = []
         for arena_id, accuracy in accuracies.items():
             if accuracy < cut_off and not shielded[arena_id]:
-                del arena.model_candidates[arena_id]
-                arena.model_candidates[arena_id] = None
-                eliminated.append(arena_id)
+                eliminate_list.append(arena_id)
             else:
-                survived.append(arena_id)
-        logger.log_elimination(survived, eliminated, accuracies, "Performance")
+                survive_list.append(arena_id)
+        logger.log_elimination(survive_list, eliminate_list, accuracies, "Performance")
 
     
     def update_stats(self, arena):
@@ -176,13 +183,14 @@ class ArenaMaintainer(object):
         eval_save_dir = self.create_file(os.path.join(self.arena_save_dir(), "eval_stats.csv"))
         test_save_dir = self.create_file(os.path.join(self.arena_save_dir(), "test_stats.csv"))
         if self.use_existing_model():
-            train_stats_dict = pd.read_csv(train_save_dir).to_dict()
-            eval_stats_dict = pd.read_csv(eval_save_dir).to_dict()
-            test_stats_dict = pd.read_csv(test_save_dir).to_dict()
+            train_stats_dict = self.load_dataframe(pd.read_csv(train_save_dir))
+            eval_stats_dict = self.load_dataframe(pd.read_csv(eval_save_dir))
+            test_stats_dict = self.load_dataframe(pd.read_csv(test_save_dir))
         else:
             train_stats_dict = self.init_stats_dict()
             eval_stats_dict = self.init_stats_dict()
             test_stats_dict = self.init_stats_dict()
+        ## TODO: Use get_accuracies with phase next time
         train_stats_dict = pd.DataFrame.from_dict(self._update_stats(train_stats_dict, arena.get_train_accuracies(), arena.get_train_losses()))
         eval_stats_dict = pd.DataFrame.from_dict(self._update_stats(eval_stats_dict, arena.get_eval_accuracies(), arena.get_eval_losses()))
         test_stats_dict = pd.DataFrame.from_dict(self._update_stats(test_stats_dict, arena.get_test_accuracies(), arena.get_test_losses()))
@@ -191,10 +199,21 @@ class ArenaMaintainer(object):
         test_stats_dict.to_csv(test_save_dir, index = False)
 
     def _update_stats(self, stats_dict, accuracies, losses):
-        stats_dict["Epoch"].append(self.epoch())
-        for arena_id, accuracy in accuracies.items():
-            stats_dict["ID: " + str(int(arena_id)) + " accuracy"].append(accuracy)
-            stats_dict["ID: " + str(int(arena_id)) + " loss"].append(losses[arena_id])
+        if self.epoch() not in stats_dict["Epoch"]:
+            stats_dict["Epoch"].append(self.epoch())
+            for arena_id, accuracy in accuracies.items():
+                stats_dict["ID: " + str(int(arena_id)) + " accuracy"].append(accuracy)
+                stats_dict["ID: " + str(int(arena_id)) + " loss"].append(losses[arena_id])
+        return stats_dict
+
+    def load_dataframe(self, df):
+        ## TODO: make names smaller clases (eg. Epoch -> epoch in next experiment) 
+        stats_dict = dict()
+        stats_dict["Epoch"] = df["Epoch"].tolist()
+        for arena_id in range(self.num_models()):
+            col_name = "ID: " + str(int(arena_id))
+            stats_dict[col_name + " accuracy"] = df[col_name + " accuracy"].tolist()
+            stats_dict[col_name + " loss"] = df[col_name + " loss"].tolist()
         return stats_dict
 
     def init_stats_dict(self):

@@ -10,7 +10,7 @@ import torch
 
 def set_up_project():
     project_path = "C:\\Users\\yangy\\Documents\\ComputerVision\\Projects\\code\\projects"
-    config_path = "Evolution\\config\\experiment_config\\exp001\\arena.yml"
+    config_path = "Evolution\\config\\experiment_config\\exp001\\arena_config.yml"
     sys.path.append(project_path)
     return os.path.join(project_path, config_path)
 
@@ -21,7 +21,7 @@ def main():
     run()
     config_path = set_up_project()
     from Evolution.train.exp001.experiment_preparer import ExperimentPreparer
-    from Evolution.train.exp001.arena import Trainer
+    from Evolution.train.exp001.arena_trainer import Trainer
     trainer = Trainer(config_path)
     trainer.start_experiment()
 

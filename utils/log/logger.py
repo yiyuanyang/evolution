@@ -18,12 +18,12 @@ class Logger(object):
     def __init__(
         self, 
         logger_save_dir, 
-        dump_frequency = 10,
+        dump_frequency = 2,
         print_to_console = True
     ):
         self.messages = []
-        self.dump_frequency = 10
-        self.phase = 3
+        self.dump_frequency = dump_frequency
+        self.phase = 1
         self.print_to_console = print_to_console
 
         if not os.path.exists(logger_save_dir):

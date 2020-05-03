@@ -68,7 +68,7 @@ class BasicBlock(torch.nn.Module):
         return out
 
     
-    def breed(self, other_block, policy = "average"):
+    def breed(self, other_block, policy = "average", max_weight_mutation=0.00005):
         """
             Generate a new Basic Block based on current block
             and input block
@@ -89,8 +89,8 @@ class BasicBlock(torch.nn.Module):
             out_channels=self.channels,
             kernel_size=self.kernel_size,
             stride=self.stride,
-            bias=False,
-            policy=policy
+            policy=policy,
+            max_weight_mutation=max_weight_mutation
         )
         new_block.conv2 = model_breeding.breed_conv(
             left_conv=self.conv2, 
@@ -99,20 +99,20 @@ class BasicBlock(torch.nn.Module):
             out_channels=self.channels,
             kernel_size=self.kernel_size,
             stride=self.stride,
-            bias=False,
-            policy=policy
+            policy=policy,
+            max_weight_mutation=max_weight_mutation
         )
 
         if self.downsample:
             new_block.downsample_block = model_breeding.breed_conv(
-                left_conv=self.downsample_block, 
-                right_conv=other_block.downsample_block,
+                left_conv=self.downsample_block[0], # ** Downsample Blocks is consisted of a conv + a batchnorm
+                right_conv=other_block.downsample_block[0],
                 in_channels=self.in_channels,
                 out_channels=self.channels,
                 kernel_size=self.kernel_size,
                 stride=self.stride,
-                bias=False,
-                policy=policy
+                policy=policy,
+                max_weight_mutation=max_weight_mutation
             )
         
         return new_block
@@ -204,7 +204,6 @@ class Bottleneck(nn.Module):
             out_channels=self.channels,
             kernel_size=self.kernel_size,
             stride=self.stride,
-            bias=False,
             policy=policy,
             max_weight_mutation=max_weight_mutation
         )
@@ -216,7 +215,6 @@ class Bottleneck(nn.Module):
             out_channels=self.channels,
             kernel_size=self.kernel_size,
             stride=self.stride,
-            bias=False,
             policy=policy,
             max_weight_mutation=max_weight_mutation
         )
@@ -228,8 +226,8 @@ class Bottleneck(nn.Module):
             out_channels=self.channels * self.expansion,
             kernel_size=self.kernel_size,
             stride=self.stride,
-            bias=False,
-            policy=policy
+            policy=policy,
+            max_weight_mutation=max_weight_mutation
         )
 
         if self.downsample:
@@ -240,7 +238,6 @@ class Bottleneck(nn.Module):
                 out_channels=self.channels * self.expansion,
                 kernel_size=self.kernel_size,
                 stride=self.stride,
-                bias=False,
                 policy=policy,
             max_weight_mutation=max_weight_mutation
             )
