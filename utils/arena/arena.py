@@ -11,7 +11,6 @@ from Evolution.utils.arena.arena_manager import ArenaManager
 from Evolution.utils.lineage.lineage_tree import Lineage
 import numpy as np
 
-
 class Arena(object):
     def __init__(self, data_loaders, train_config, save_config):
         self.am = ArenaManager(data_loaders, train_config, save_config)

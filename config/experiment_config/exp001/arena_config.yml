@@ -24,7 +24,7 @@ data_config: {
   data_loader_config: {
     shuffle: True,
     num_workers: 8,
-    batch_size: 40
+    batch_size: 80
   },
 
   augmentation_config: {
@@ -65,12 +65,12 @@ train_config: {
   },
 
   evolution_config: {
-    start_epoch: 4, ## ** If Pause and Restart, Modify This
+    start_epoch: 1, ## ** If Pause and Restart, Modify This
     max_rounds: 50,
-    epoch_per_round: 1,
-    num_models: 3,
-    use_existing_model: True, ## ** If Pause and Restart, Modify This
-    cur_model_id: 4, ## ** If Pause and Restart, Modify This
+    epoch_per_round: 5,
+    num_models: 10,
+    use_existing_model: False, ## ** If Pause and Restart, Modify This
+    cur_model_id: 0, ## ** If Pause and Restart, Modify This
     elimination_rate: 0.3,
     max_round_per_model: 8, # This is in rounds
     age_variation: 3,

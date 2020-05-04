@@ -4,11 +4,13 @@
     Date: April. 19th 2020
 """
 
-import torch
-from torch.utils import data
+
 from Evolution.trainer.exp001.experiment_preparer import ExperimentPreparer
 from Evolution.data.CIFAR10.CIFAR10_dataset import CIFAR10Dataset
 from Evolution.utils.arena.arena import Arena
+from torch.utils import data
+import torch
+import os
 
 
 class Trainer(object):
@@ -22,6 +24,10 @@ class Trainer(object):
         self.basic_config, self.data_config, \
             self.train_config, self.save_config = \
             self.experiment_preparer.get_each_config()
+        self.save_config["model_save_dir"] = \
+            os.path.join(
+                self.save_config["model_save_dir"], 
+                self.basic_config["experiment_name"])
         self.load_data()
         self.arena = Arena(self.data_loaders, self.train_config,
                            self.save_config)
