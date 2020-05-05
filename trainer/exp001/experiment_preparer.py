@@ -20,28 +20,23 @@ class ExperimentPreparer(object):
 
     def process_config(self):
         basic_config, data_config, _, save_config = self.get_each_config()
-        create_dir = save_config["create_dir_in_preparer"]
         data_config = self.process_data_path(0, data_config)
         data_config = self.process_data_path(1, data_config)
         data_config = self.process_data_path(2, data_config)
+        save_config["save_dir"] = \
+            os.path.join(
+                save_config["save_dir"],
+                basic_config["experiment_name"]
+            )
         save_config["model_save_dir"] = \
             os.path.join(
                 save_config["save_dir"],
-                "model",
-                basic_config["experiment_name"]
+                "models"
             )
-
-        save_config["logger_save_dir"] = \
-            os.path.join(
-                save_config["save_dir"],
-                "log",
-                basic_config["experiment_name"]
-            )
-        self.create_dir(save_config["logger_save_dir"])
-        if create_dir:
-            self.create_dir(save_config["model_save_dir"])
+        self.create_dir(save_config["save_dir"])
+        self.create_dir(save_config["model_save_dir"])
         self.set_each_config(data_config=data_config, save_config=save_config)
-        self.logger = Logger(logger_save_dir=save_config["logger_save_dir"],
+        self.logger = Logger(logger_save_dir=save_config["save_dir"],
                              dump_frequency=save_config["dump_frequency"])
 
     def create_dir(self, directory):

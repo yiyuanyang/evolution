@@ -71,6 +71,7 @@ class BasicBlock(torch.nn.Module):
     def breed(self,
               other_block,
               policy="average",
+              mutate=True,
               max_weight_mutation=0.00005):
         """
             Generate a new Basic Block based on current block
@@ -88,6 +89,7 @@ class BasicBlock(torch.nn.Module):
             kernel_size=self.kernel_size,
             stride=self.stride,
             policy=policy,
+            mutate=mutate,
             max_weight_mutation=max_weight_mutation)
         new_block.conv2 = model_breeding.breed_conv(
             left_conv=self.conv2,
@@ -97,6 +99,7 @@ class BasicBlock(torch.nn.Module):
             kernel_size=self.kernel_size,
             stride=self.stride,
             policy=policy,
+            mutate=mutate,
             max_weight_mutation=max_weight_mutation)
 
         if self.downsample:
@@ -109,6 +112,7 @@ class BasicBlock(torch.nn.Module):
                     kernel_size=self.kernel_size,
                     stride=self.stride,
                     policy=policy,
+                    mutate=mutate,
                     max_weight_mutation=max_weight_mutation),
                 self.norm_layer(self.channels))
 
@@ -179,6 +183,7 @@ class Bottleneck(nn.Module):
     def breed(self,
               other_block,
               policy="average",
+              mutate=True,
               max_weight_mutation=0.00005):
         """
             Generate a new Basic Block based on current block
@@ -196,6 +201,7 @@ class Bottleneck(nn.Module):
             kernel_size=self.kernel_size,
             stride=self.stride,
             policy=policy,
+            mutate=mutate,
             max_weight_mutation=max_weight_mutation)
 
         new_block.conv2 = model_breeding.breed_conv(
@@ -206,6 +212,7 @@ class Bottleneck(nn.Module):
             kernel_size=self.kernel_size,
             stride=self.stride,
             policy=policy,
+            mutate=mutate,
             max_weight_mutation=max_weight_mutation)
 
         new_block.conv3 = model_breeding.breed_conv(
@@ -216,6 +223,7 @@ class Bottleneck(nn.Module):
             kernel_size=self.kernel_size,
             stride=self.stride,
             policy=policy,
+            mutate=mutate,
             max_weight_mutation=max_weight_mutation)
 
         if self.downsample:
@@ -228,6 +236,7 @@ class Bottleneck(nn.Module):
                     kernel_size=self.kernel_size,
                     stride=self.stride,
                     policy=policy,
+                    mutate=mutate,
                     max_weight_mutation=max_weight_mutation),
                 self.norm_layer(self.channels))
 

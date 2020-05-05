@@ -20,11 +20,11 @@ import os
 class Logger(object):
     def __init__(self,
                  logger_save_dir,
-                 dump_frequency=2,
+                 dump_frequency=1,
                  print_to_console=True):
         self.messages = []
         self.dump_frequency = dump_frequency
-        self.phase = 0
+        self.phase = 3
         self.print_to_console = print_to_console
 
         assert os.path.exists(logger_save_dir), \
@@ -34,7 +34,8 @@ class Logger(object):
             os.path.join(logger_save_dir, "train.log"),
             os.path.join(logger_save_dir, "eval.log"),
             os.path.join(logger_save_dir, "test.log"),
-            os.path.join(logger_save_dir, "initial.log")
+            os.path.join(logger_save_dir, "general.log"),
+            os.path.join(logger_save_dir, "breed.log")
         ]
         self.stat_save_dir = [
             os.path.join(logger_save_dir, "train.csv"),
@@ -76,7 +77,7 @@ class Logger(object):
             force_dump {bool} -- whether to force print to console
                 (default: {False})
         """
-        self.messages.append(log)
+        self.messages.append("\n" + log)
         if force_dump or len(self.messages) >= self.dump_frequency:
             self._dump()
         if self.print_to_console:
@@ -105,12 +106,16 @@ class Logger(object):
         if phase == 2:
             self.print_to_console = False
 
+    def _set_phase(self, phase):
+        self.phase = phase
+
     def _dump(self):
         """Print Messages to console
         """
 
         file = open(self.logger_save_dir[self.phase], "a")
         file.writelines(self.messages)
+        self.messages = []
 
     def log(self, message):
         """Basic Logging
@@ -133,6 +138,7 @@ class Logger(object):
         log = ("LOGGING: Epoch " + str(epoch) +
                " , adjusted learning rate from " + str(cur) + " to " +
                str(new))
+        self.log("===LEARNING RATE===")
         self._log(log=log)
 
     def log_config(self, config_name, config):
@@ -144,6 +150,7 @@ class Logger(object):
         """
 
         log = "LOGGING: " + config_name + ": " + yaml.dump(config)
+        self.log("===MODEL CONFIG===")
         self._log(log=log)
 
     def log_batch_result(self,
@@ -203,7 +210,7 @@ class Logger(object):
         log = ("LOGGING: Batch " + str(batch_index) + " Data Shape: " +
                str(list(data.shape)) + " Label Shape: " +
                str(list(label.shape)))
-
+        self.log("===DATA SHAPE===")
         self._log(log=log)
 
     def _log_accuracy(self, epoch, ground_truth, prediction):
@@ -320,6 +327,8 @@ class Logger(object):
         global_accuracy, accuracy, global_recall, recall, \
             global_precision, precision, global_f1, f1, global_loss = \
             self._log_epoch_metrics(epoch, ground_truth, prediction, loss)
+        if os.path.exists(self.stat_save_dir[self.phase]):
+            self.load_prior_metrics()
 
         self.stats[self.phase]["epoch"].append(epoch)
         self.stats[self.phase]["global_accuracy"].append(
@@ -372,7 +381,7 @@ class Logger(object):
         self.log(model_log)
 
     def log_model_statistics(self, model, model_name, calculate_statistics):
-        self._log("\n=====\nWeight Statistics for Model")
+        self._log("===WEIGHT STATS===")
         calculate_statistics(model, model_name, self)
 
     def log_residual_block_statistics(self, block):
@@ -410,7 +419,7 @@ class Logger(object):
         self._log(msg)
 
     def log_breed(self, model_id_one, model_id_two, new_model_id):
-        self._log("=================BREEDING=================")
+        self._log("===BREEDING===")
         self._log(
             "Model {model_id_one} and {model_id_two} generated {new_model_id}".
             format(model_id_one=model_id_one,
@@ -429,31 +438,35 @@ class Logger(object):
             arena_id: value_dict[arena_id]
             for arena_id in eliminated
         }
+        self.log("===ELIMINATION===")
         self._log("Eliminated by {reason}".format(reason=reason))
         self._log("Survived Value Pairs {survived}".format(survived=survived))
         self._log("Eliminated Value Pairs {eliminated}".format(
             eliminated=eliminated))
 
     def log_round_stats(self, round, accuracy, loss):
+        self.log("===ROUND STATS===")
         self._log("Accuracies For Each Arena_ID: {accuracy}".format(accuracy))
         self._log("Losses For Each Arena_ID: {loss}".format(loss))
 
     def log_model_activity(self, activity, model_candidate):
+        self.log("===MODEL ACTIVITY===")
         self._log(
             "{activity} for Arena ID: {arena_id}, Model ID: {model_id}".format(
                 activity=activity,
                 arena_id=model_candidate.mcm.arena_id(),
                 model_id=model_candidate.mcm.model_id()))
 
-    def log_lineage(self, arena_id, lineage):
-        self._log("Arena ID: {arena_id} has lineage: {lineage}".format(
-            arena_id=arena_id, lineage=lineage))
+    def log_lineage(self, arena_id, model_id, lineage):
+        self.log("===LINEAGE===")
+        self._log("Arena ID: {arena_id} Model ID: {model_id} lineage: {lineage}".format(
+            arena_id=arena_id, model_id=model_id, lineage=lineage))
 
     def log_end_of_round_state(self, arena, eliminated, new_candidates=None):
         self._log("==========================================================")
         self._log("==================END OF ROUND ANALYSIS===================")
         self._log("==========================================================")
-        cur_round = arena.rounds()
+        cur_round = arena.am.rounds()
         self._log("Round: {cur_round}".format(cur_round=cur_round))
         accuracy = arena.get_accuracy()
         loss = arena.get_loss()
@@ -469,7 +482,7 @@ class Logger(object):
                 for arena_id in eliminated]
             new_model_ids = [
                 candidate.mcm.model_id()
-                for candidate in new_candidates]
+                for arena_id, candidate in new_candidates.items()]
             self._log("Elimating Models Of Arena ID: {arena_ids}".format(arena_ids=eliminated))
             self._log("Their Model IDs: {model_ids}".format(model_ids=eliminated_model_ids))
             self._log("New Replacing Model IDs: {model_ids}".format(model_ids=new_model_ids))
@@ -483,16 +496,16 @@ class Logger(object):
         arena,
         reverse=True
     ):
-        self._log("====={metric_name}=====".format(metric_name))
+        self._log("====={metric_name}=====".format(metric_name=metric_name))
         arena_ids = list(performance_dict.keys())
         model_ids = {
             arena_id: arena.model_candidates[arena_id].mcm.model_id()
             for arena_id in arena_ids}
-        performance_dict = sorted(performance_dict.values(), reverse=reverse)
-        for arena_id in arena_ids:
+        performance_dict = sorted(performance_dict.items(), key=lambda x: x[1], reverse=reverse)
+        for arena_id, value in performance_dict:
             self._log("Arena ID: {arena_id} Model ID: ".format(arena_id=arena_id) +
                       "{model_id} {metric_name}: {value}".format(
                           arena_id=arena_id,
                           model_id=model_ids[arena_id],
                           metric_name=metric_name,
-                          value=str(performance_dict[arena_id])))
+                          value=str(value)))

@@ -11,6 +11,7 @@ from Evolution.utils.arena.arena_manager import ArenaManager
 from Evolution.utils.lineage.lineage_tree import Lineage
 import numpy as np
 
+
 class Arena(object):
     def __init__(self, data_loaders, train_config, save_config):
         self.am = ArenaManager(data_loaders, train_config, save_config)
@@ -72,16 +73,23 @@ class Arena(object):
         return elimination_list
 
     def breed(self, eliminated):
-        survived = [
-            arena_id for arena_id in self.get_arena_ids()
+        top_performers = [
+            arena_id
+            for arena_id, _ in sorted(
+                self.get_accuracy().items(),
+                key=lambda x: x[1],
+                reverse=True)]
+        top_performers = [
+            arena_id for arena_id in top_performers
             if arena_id not in eliminated
         ]
         new_candidates = {}
-        for i in range(len(survived)):
-            if i == len(eliminated) or i == len(survived) - 1:
+        for i in range(len(top_performers)):
+            if i == len(eliminated) or i == len(top_performers) - 1:
                 break
-            parent_arena_id_1 = survived[i]
-            parent_arena_id_2 = np.random.choice(survived[i+1:i+6])
+            parent_arena_id_1 = top_performers[i]
+            parent_arena_id_2 = np.random.choice(
+                top_performers[i+1:i+self.am.downward_acceptance()])
             new_candidates[eliminated[i]] = self._breed(
                 parent_arena_id_1=parent_arena_id_1,
                 parent_arena_id_2=parent_arena_id_2,
@@ -101,6 +109,7 @@ class Arena(object):
         target_arena_id,
         logger
     ):
+        self.logger._set_phase(phase=4)  # ** For Breeding
         new_candidate, new_model_id = self.mcf.gen_model_candidate(
             parent_1_lineage=self.model_candidates[
                 parent_arena_id_1].mcm.lineage(),
@@ -115,9 +124,10 @@ class Arena(object):
             new_arena_id=target_arena_id,
             new_model_id=new_model_id,
             logger=logger,
-            mutation_policy=self.am.mutation_policy(),
+            policy=self.am.policy(),
             max_weight_mutation=self.am.max_weight_mutation())
-        self.logger.log_lineage(target_arena_id, new_lineage)
+        self.logger.log_lineage(target_arena_id, new_model_id, new_lineage)
+        self.logger._set_phase(phase=3)  # ** Back to general
         return new_candidate
 
     def run_round(self):
@@ -137,15 +147,18 @@ class Arena(object):
             new_candidates = None
             if elimination_list is not None:
                 new_candidates = self.breed(elimination_list)
-                self.eliminate_and_replace(new_candidates)
-            self.end_of_round_analysis(eliminated_list, new_candidates)
+            self.end_of_round_analysis(elimination_list, new_candidates)
+            self.eliminate_and_replace(new_candidates)
             self.am.epoch_step(1)
 
     def eliminate_and_replace(self, new_candidates):
+        if new_candidates is None:
+            return
         for arena_id, candidate in new_candidates.items():
             candidate.enter_arena(arena_id, self.am.epoch(), new_model=False)
+            self.model_candidates[arena_id].mfm.delete_model_optimizer(epoch="*")
             del self.model_candidates[arena_id]
             self.model_candidates[arena_id] = candidate
 
-    def end_of_round_analysis(self, eliminated_list, new_candidates=None):
-        self.logger.log_end_of_round_state(self, eliminated_list, new_candidates)
+    def end_of_round_analysis(self, elimination_list, new_candidates=None):
+        self.logger.log_end_of_round_state(self, elimination_list, new_candidates)

@@ -9,7 +9,6 @@ from Evolution.utils.arena.model_config_manager import ModelConfigManager
 from Evolution.utils.arena.model_file_manager import ModelFileManager
 from Evolution.utils.logger.logger import Logger
 from torch import nn
-import numpy as np
 import torch
 import math
 import os
@@ -45,10 +44,11 @@ class ModelCandidate(object):
             rounds=math.ceil(epoch/epoch_per_round)
         ), self)
         self.mfm.load_model_optimizer(self)
+        trained = False
         for i in range(epoch_per_round):
             if self.mfm.model_exists(epoch + i) or \
                     self.mfm.model_exists(epoch + epoch_per_round - 1):
-                self.logger.log("Skipped Epoch {epoch} ".format(epoch=epoch) +
+                self.logger.log("Skipped Epoch {epoch} ".format(epoch=epoch + i) +
                                 "For Arena ID: {arena_id} and Model ID: {model_id}".format(
                                     epoch=epoch,
                                     arena_id=self.mcm.arena_id(),
@@ -58,9 +58,12 @@ class ModelCandidate(object):
             self.run_epoch(data_loader=data_loaders[0], phase=0)
             self.run_epoch(data_loader=data_loaders[1], phase=1)
             self.run_epoch(data_loader=data_loaders[2], phase=2)
-            self.mcm.aging()
+            trained = True
             self.mfm.save_epoch(self)
         self.mfm.unload_model_optimizer(self)
+        if trained:
+            self.mcm.aging()
+        return trained
 
     def epoch_prep(self, ModelCandidate, phase=0):
         if phase == 0:
@@ -95,7 +98,7 @@ class ModelCandidate(object):
         self.mcm.set_loss(phase, loss)
         if phase == 0:
             self.model.log_weights(self.logger)
-        self.logger.set_phase(0)  # ** Change Back To Phase 0 For Console Output
+        self.logger._set_phase(phase=3)
 
     def batch_log(self, batch_index, num_batches, data, ground_truth,
                   prediction_prob, prediction, loss, logger):
@@ -137,26 +140,31 @@ class ModelCandidate(object):
               new_arena_id,
               new_model_id,
               logger,
-              mutation_policy="average",
+              policy="average",
+              mutate=True,
               max_weight_mutation=0.00005):
         self.mfm.load_model_optimizer(self)
         other_candidate.mfm.load_model_optimizer(other_candidate)
-        torch.manual_seed(self.mcm.random_seed())
-        np.random.seed(self.mcm.random_seed())
-        self.model.breed_net(other_candidate.model, logger, mutation_policy,
-                             max_weight_mutation)
+        # ** torch.manual_seed(self.mcm.random_seed())
+        # ** np.random.seed(self.mcm.random_seed())
+        self.model.breed_net(
+            other_candidate.model,
+            logger,
+            policy,
+            mutate,
+            max_weight_mutation)
         new_model_save_dir = os.path.join(
             os.path.dirname(self.mcm.model_save_dir()), str(new_model_id))
         torch.save(
             self.model.state_dict(),
             os.path.join(
                 new_model_save_dir,
-                str(self.mcm.epoch()) + "_model.pt"))
+                "model_{epoch}.pt".format(epoch=str(self.mcm.epoch()))))
         torch.save(
             self.optim.state_dict(),
             os.path.join(
                 new_model_save_dir,
-                str(self.mcm.epoch()) + "_optim.pt"))
+                "optim_{epoch}.pt".format(epoch=str(self.mcm.epoch()))))
         self.logger.log_breed(
             self.mcm.model_id(),
             other_candidate.mcm.model_id(), new_model_id)

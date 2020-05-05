@@ -122,6 +122,7 @@ class ResNet(nn.Module):
                   other_net,
                   logger,
                   policy="average",
+                  mutate=True,
                   max_weight_mutation=0.00005):
         """
             Given a right hand side net, breed a new net that with some policy,
@@ -142,6 +143,7 @@ class ResNet(nn.Module):
                 stride=temp.stride[0],
                 out_channels=64,
                 policy=policy,
+                mutate=mutate,
                 max_weight_mutation=max_weight_mutation)
             del temp
             temp = self.layer1
@@ -149,6 +151,7 @@ class ResNet(nn.Module):
                 self_layer=self.layer1,
                 other_layer=other_net.layer1,
                 policy=policy,
+                mutate=mutate,
                 max_weight_mutation=max_weight_mutation)
             del temp
             temp = self.layer2
@@ -156,6 +159,7 @@ class ResNet(nn.Module):
                 self_layer=self.layer2,
                 other_layer=other_net.layer2,
                 policy=policy,
+                mutate=mutate,
                 max_weight_mutation=max_weight_mutation)
             del temp
             temp = self.layer3
@@ -163,6 +167,7 @@ class ResNet(nn.Module):
                 self_layer=self.layer3,
                 other_layer=other_net.layer3,
                 policy=policy,
+                mutate=mutate,
                 max_weight_mutation=max_weight_mutation)
             del temp
             temp = self.layer4
@@ -170,6 +175,7 @@ class ResNet(nn.Module):
                 self_layer=self.layer4,
                 other_layer=other_net.layer4,
                 policy=policy,
+                mutate=mutate,
                 max_weight_mutation=max_weight_mutation)
             del temp
 
@@ -177,14 +183,21 @@ class ResNet(nn.Module):
             self.log_weights(logger)
             return self
 
-    def breed_layer(self, self_layer, other_layer, policy,
-                    max_weight_mutation):
+    def breed_layer(
+        self,
+        self_layer,
+        other_layer,
+        policy,
+        mutate,
+        max_weight_mutation
+    ):
 
         new_layers = []
         for i in range(len(self_layer)):
             new_layers.append(self_layer[i].breed(
                 other_block=other_layer[i],
                 policy=policy,
+                mutate=mutate,
                 max_weight_mutation=max_weight_mutation))
         return nn.Sequential(*new_layers)
 

@@ -24,10 +24,12 @@ class Trainer(object):
         self.basic_config, self.data_config, \
             self.train_config, self.save_config = \
             self.experiment_preparer.get_each_config()
-        self.save_config["model_save_dir"] = \
-            os.path.join(
-                self.save_config["model_save_dir"], 
-                self.basic_config["experiment_name"])
+        os.system("cp {old_path} {new_path}".format(
+            old_path=config_path,
+            new_path=os.path.join(
+                self.save_config["save_dir"],
+                "config.yaml")
+        ))
         self.load_data()
         self.arena = Arena(self.data_loaders, self.train_config,
                            self.save_config)

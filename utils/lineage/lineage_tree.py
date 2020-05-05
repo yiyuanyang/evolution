@@ -22,16 +22,19 @@ class LineageNode(object):
 
 class Lineage(object):
     def __init__(self, model_id, left_lineage, right_lineage):
-        left = self.copy_lineage(left_lineage)
-        right = self.copy_lineage(right_lineage)
+        left, right = None, None
+        if left_lineage is not None:
+            left = self.copy_lineage(left_lineage.root)
+        if right_lineage is not None:
+            right = self.copy_lineage(right_lineage.root)
         self.root = LineageNode(model_id, left, right)
 
     def copy_lineage(self, lineage):
         if lineage is None:
             return None
-        root = LineageNode(model_id=lineage.model_id())
-        root.left_parent = self.copy_lineage(lineage.left())
-        root.right_parent = self.copy_lineage(lineage.right())
+        root = LineageNode(model_id=lineage.model_id)
+        root.left = self.copy_lineage(lineage.left)
+        root.right = self.copy_lineage(lineage.right)
         return root
 
     def model_id(self):

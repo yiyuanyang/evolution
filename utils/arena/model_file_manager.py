@@ -22,13 +22,13 @@ class ModelFileManager(object):
         return directory
 
     def _model_dir(self, epoch):
-        return os.path.join(self.model_save_dir, str(epoch) + "_model.pt")
+        return os.path.join(self.model_save_dir, "model_{epoch}.pt".format(epoch=str(epoch)))
 
     def _optim_dir(self, epoch):
-        return os.path.join(self.model_save_dir, str(epoch) + "_optim.pt")
+        return os.path.join(self.model_save_dir, "optim_{epoch}.pt".format(epoch=str(epoch)))
 
     def _config_dir(self, epoch):
-        return os.path.join(self.model_save_dir, "config.pt")
+        return os.path.join(self.model_save_dir, "config.pickle")
 
     def save_config(self, config):
         epoch = config["epoch"]
@@ -89,6 +89,15 @@ class ModelFileManager(object):
             "Cannot Save Non Existent Model and Optimizer"
         torch.save(candidate.model.state_dict(), self._model_dir(epoch))
         torch.save(candidate.optim.state_dict(), self._optim_dir(epoch))
+
+    def delete_model_optimizer(self, epoch):
+        """Deleting models for this candidate to free up space
+
+        Arguments:
+            epoch {int or string} -- model to be deleted, * for all models
+        """
+        os.system("rm " + os.path.join(self.model_save_dir, "model*"))
+        os.system("rm " + os.path.join(self.model_save_dir, "optim*"))
 
     def save_snapshot(self, candidate):
         config = candidate.config()

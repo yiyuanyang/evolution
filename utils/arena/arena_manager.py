@@ -66,8 +66,11 @@ class ArenaManager(object):
     def elimination_rate(self):
         return self.evolution_config("elimination_rate")
 
-    def mutation_policy(self):
-        return self.evolution_config("mutation_policy")
+    def policy(self):
+        return self.evolution_config("policy")
+
+    def mutate(self):
+        return self.evolution_config("mutate")
 
     def random_seed(self):
         return self.evolution_config("random_seed")
@@ -101,12 +104,11 @@ class ArenaManager(object):
 
     def eliminate_by_age(self, arena, logger):
         ages = arena.get_model_ages()
-        shielded = arena.get_shields()
         survive_list = []
         eliminate_list = []
         for arena_id, age_left in ages.items():
             assert age_left >= 0, "Age Left Should Not Got Negative"
-            if age_left == 0 and not shielded[arena_id]:
+            if age_left == 0:
                 eliminate_list.append(arena_id)
             else:
                 survive_list.append(arena_id)
@@ -115,10 +117,15 @@ class ArenaManager(object):
 
     def eliminate_by_accuracy(self, arena, logger):
         accuracies = arena.get_accuracy(phase=1)
-        raw_accuracies = sorted([value for key, value in accuracies.items()])
-        cut_off = raw_accuracies[int(
-            round(len(raw_accuracies) * self.elimination_rate()))]
         shielded = arena.get_shields()
+        raw_accuracies = {
+            key: value
+            for key, value in accuracies.items()
+            if not shielded[key]}  # ** Consider only the unshielded
+        raw_accuracies = sorted([value for key, value in raw_accuracies.items()])
+        cut_off = raw_accuracies[
+            int(round(len(raw_accuracies) * self.elimination_rate()))]
+
         survive_list = []
         eliminate_list = []
         for arena_id, accuracy in accuracies.items():
@@ -131,18 +138,20 @@ class ArenaManager(object):
         return eliminate_list
 
     def update_stats(self, arena):
-        train_save_dir = self._create_file(
-            os.path.join(self.arena_save_dir(), "train_stats.csv"))
-        eval_save_dir = self._create_file(
-            os.path.join(self.arena_save_dir(), "eval_stats.csv"))
-        test_save_dir = self._create_file(
-            os.path.join(self.arena_save_dir(), "test_stats.csv"))
-        if self.use_existing_model():
+        train_save_dir = os.path.join(self.arena_save_dir(), "train_stats.csv")
+        eval_save_dir = os.path.join(self.arena_save_dir(), "eval_stats.csv")
+        test_save_dir = os.path.join(self.arena_save_dir(), "test_stats.csv")
+        if os.path.exists(train_save_dir):
             train_stats_dict = self._load_dataframe(
                 pd.read_csv(train_save_dir))
-            eval_stats_dict = self._load_dataframe(pd.read_csv(eval_save_dir))
-            test_stats_dict = self._load_dataframe(pd.read_csv(test_save_dir))
+            eval_stats_dict = self._load_dataframe(
+                pd.read_csv(eval_save_dir))
+            test_stats_dict = self._load_dataframe(
+                pd.read_csv(test_save_dir))
         else:
+            self._create_file(train_save_dir)
+            self._create_file(eval_save_dir)
+            self._create_file(test_save_dir)
             train_stats_dict = self._init_stats_dict()
             eval_stats_dict = self._init_stats_dict()
             test_stats_dict = self._init_stats_dict()

@@ -56,12 +56,10 @@ class ModelCandidateFactory(object):
                             parent_2_lineage=None):
         model_id = self._new_model_id()
         evolution_config = self.train_config["evolution_config"]
-        random_seed = evolution_config["random_seed"]
-        np.random.seed(random_seed)
         if shield is None:
             shield = evolution_config["shield_epoch"] + \
                 np.random.choice(list(range(
-                    -evolution_config["age_variation"],
+                    -evolution_config["shield_variation"],
                     evolution_config["shield_variation"]
                 )))
         if parent_1_lineage is None:
