@@ -55,16 +55,11 @@ class Trainer(object):
         self.data_loaders = [train_loader, eval_loader, test_loader]
 
     def adjust_learning_rate(self, epoch):
-        steps = self.train_config["learning_config"]["steps"]
         gamma = self.train_config["learning_config"]["gamma"]
-        if epoch not in steps:
-            self.logger.log("No need to adjust learning rate")
-            return
         cur_learning_rate = self.learning_rate
         self.learning_rate *= gamma
         for param_group in self.optim.param_groups:
             param_group['lr'] = self.learning_rate
-
         self.logger.log_learning_rate_change(epoch=epoch,
                                              cur=cur_learning_rate,
                                              new=self.learning_rate)

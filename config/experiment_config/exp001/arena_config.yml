@@ -1,6 +1,6 @@
 # Basic Info
 basic_config: {
-  experiment_name: "exp002_arena",
+  experiment_name: "exp003_arena_less_competitive",
   experiment_performer: "yiyuanyang",
   experiment_date: "2020-05-05",
 }
@@ -67,14 +67,14 @@ train_config: {
   evolution_config: {
     start_epoch: 1, ## ** If Pause and Restart, Modify This
     max_rounds: 50,
-    epoch_per_round: 5,
-    num_models: 10,
+    epoch_per_round: 10,
+    num_models: 20,
     use_existing_model: False, ## ** If Pause and Restart, Modify This
     cur_model_id: 0, ## ** If Pause and Restart, Modify This
     elimination_rate: 0.2,
-    max_round_per_model: 10, # This is in rounds
-    age_variation: 3,
-    shield_epoch: 20, # This is in epochs
+    max_round_per_model: 12, # This is in rounds
+    age_variation: 4,
+    shield_epoch: 40, # This is in epochs
     shield_variation: 5,
     breed_probability: 0.75,
     random_seed: 10,
@@ -82,7 +82,7 @@ train_config: {
     mutate: True,
     max_weight_mutation: 0.00005,
     max_weight_mutation_decay: 0.98,
-    downward_acceptance: 6 # Only consider to breed with next six models with equal probability
+    downward_acceptance: 4 # ** Only consider to breed with next six models with equal probability
   },
 
   backprop_config: {  

@@ -96,8 +96,8 @@ class ModelFileManager(object):
         Arguments:
             epoch {int or string} -- model to be deleted, * for all models
         """
-        os.system("rm " + os.path.join(self.model_save_dir, "model*"))
-        os.system("rm " + os.path.join(self.model_save_dir, "optim*"))
+        os.system("rm " + os.path.join(self.model_save_dir, "model_{epoch}.pt").format(epoch=epoch))
+        os.system("rm " + os.path.join(self.model_save_dir, "optim_{epoch}.pt").format(epoch=epoch))
 
     def save_snapshot(self, candidate):
         config = candidate.config()

@@ -1,8 +1,8 @@
 # Basic Info
 basic_config: {
-  experiment_name: "exp001_gradient_descent_lr_0.05_decay_every_40_gamma_0.5_epoch_batch_size_40_resnet18_data_augmentation_3",
+  experiment_name: "exp003_gradient_descent",
   experiment_performer: "yiyuanyang",
-  experiment_date: "2020-04-26",
+  experiment_date: "2020-05-06",
 }
 
 
@@ -54,22 +54,21 @@ data_config: {
 # Training
 train_config: {
   model_config: {
-    model_type: "resnet18",
+    model_type: "resnet10",
     in_channels: 3,
     image_size: 32,
     num_classes: 10,
     kernel_sizes: [7,3,3,3,3]
   },
   learning_config: {
-    start_epoch: 40,
-    max_epoch: 100,
-    use_existing_model: True,
+    start_epoch: 1,
+    max_epoch: 250,
+    use_existing_model: False,
     adjust_learning_rate: True,
     learning_rate: 0.05,
     eval_only: False,
     adjust_lr: True,
-    steps: [40,80,120,160],
-    gamma: 0.5,
+    gamma: 0.98,
     loss: "cross_entropy",
     gradient_clip: False,
     gradient_clip_value: 1
