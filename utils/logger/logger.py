@@ -489,6 +489,13 @@ class Logger(object):
         else:
             self._log("Eliminated none of the models during this round")
 
+    def log_learning_rate(
+        self,
+        learning_rate
+    ):
+        self._log("====Learning Rate Change====")
+        self._log("New Learning Rate: {learning_rate}".format(learning_rate=learning_rate))
+
     def _log_performance_dict(
         self,
         metric_name,

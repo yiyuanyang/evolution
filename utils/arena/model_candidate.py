@@ -55,6 +55,7 @@ class ModelCandidate(object):
                                     model_id=self.mcm.model_id()))
                 continue
             self.mcm.epoch_step()
+            self.adjust_learning_rate()
             self.run_epoch(data_loader=data_loaders[0], phase=0)
             self.run_epoch(data_loader=data_loaders[1], phase=1)
             self.run_epoch(data_loader=data_loaders[2], phase=2)
@@ -134,6 +135,12 @@ class ModelCandidate(object):
         ground_truth = ground_truth.data.cpu().numpy().tolist()
         loss = loss.data.cpu().numpy().tolist()
         return prediction_prob, prediction, loss
+
+    def adjust_learning_rate(self):
+        learning_rate = self.mcm.learning_rate()
+        for param_group in self.optim.param_groups:
+            param_group['lr'] = learning_rate
+        self.logger.log_learning_rate(learning_rate)
 
     def breed(self,
               other_candidate,

@@ -1,0 +1,109 @@
+# Basic Info
+basic_config: {
+  experiment_name: "exp003_arena",
+  experiment_performer: "yiyuanyang",
+  experiment_date: "2020-05-06",
+}
+
+
+# Data Loading
+data_config: {
+  data_dir: "D:\\datasets\\cifar-10",
+  train_data: [
+    "data_batch_1",
+    "data_batch_2",
+    "data_batch_3",
+    "data_batch_4"
+  ],
+  eval_data: ["data_batch_5"],
+  test_data: ["test_batch"],
+  in_channels: 3,
+  image_size: 32,
+  num_classes: 10,
+
+  data_loader_config: {
+    shuffle: True,
+    num_workers: 8,
+    batch_size: 80
+  },
+
+  augmentation_config: {
+    ColorJitter: {
+      brightness: 0.5,
+      contrast: 0.3,
+      saturation: 0.5,
+      hue: 0.05
+    },
+    RandomGrayscale: {
+      probability: 0.2
+    },
+    RandomHorizontalFlip: {
+      probability: 0.3
+    },
+    RandomVerticalFlip: {
+      probability: 0.2
+    },
+    RandomAffine: {
+      degrees: 10,
+      translate: [0.1,0.1],
+      scale: null,
+      shear: null
+    }
+  }
+
+}
+
+
+# Training
+train_config: {
+  model_config: {
+    model_type: "resnet10",
+    in_channels: 3,
+    image_size: 32,
+    num_classes: 10,
+    kernel_sizes: [7,3,3,3,3]
+  },
+
+  evolution_config: {
+    start_epoch: 1, ## ** If Pause and Restart, Modify This
+    max_rounds: 50,
+    epoch_per_round: 10,
+    num_models: 20,
+    use_existing_model: False, ## ** If Pause and Restart, Modify This
+    cur_model_id: 0, ## ** If Pause and Restart, Modify This
+    elimination_rate: 0.2,
+    max_round_per_model: 12, # This is in rounds
+    age_variation: 4,
+    shield_epoch: 40, # This is in epochs
+    shield_variation: 5,
+    breed_probability: 0.75,
+    random_seed: 10,
+    policy: "average",
+    mutate: True,
+    max_weight_mutation: 0.00005,
+    max_weight_mutation_decay: 0.98,
+    downward_acceptance: 4 # ** Only consider to breed with next six models with equal probability
+  },
+
+  backprop_config: {  
+    adjust_learning_rate: True,
+    learning_rate: 0.05,
+    adjust_lr: True,
+    gamma: 0.98,
+    loss: "cross_entropy",
+    gradient_clip: False,
+    gradient_clip_value: 1,
+    eval_only: False,
+  },
+}
+
+
+# Logger and model saving
+save_config: {
+  save_dir: "E:\\saved_experiments\\exp003", 
+  create_dir_in_preparer: False,
+  use_logger: True,
+  dump_frequency: 2,
+  log_frequency: 200,
+  display_frequency: 1000
+}
