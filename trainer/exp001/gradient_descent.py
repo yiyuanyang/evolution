@@ -56,13 +56,11 @@ class Trainer(object):
 
     def adjust_learning_rate(self, epoch):
         gamma = self.train_config["learning_config"]["gamma"]
-        cur_learning_rate = self.learning_rate
-        self.learning_rate *= gamma
+        learning_rate = self.train_config["learning_config"]["learning_rate"]
+        learning_rate = learning_rate * (gamma ** epoch)
         for param_group in self.optim.param_groups:
-            param_group['lr'] = self.learning_rate
-        self.logger.log_learning_rate_change(epoch=epoch,
-                                             cur=cur_learning_rate,
-                                             new=self.learning_rate)
+            param_group['lr'] = learning_rate
+        self.logger.log_learning_rate(learning_rate)
 
     def train(self):
         # Get variables

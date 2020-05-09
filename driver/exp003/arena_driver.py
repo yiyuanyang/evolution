@@ -13,7 +13,7 @@ def set_up_project():
     project_path = \
         "C:\\Users\\yangy\\Documents\\ComputerVision\\Projects\\code\\projects"
     config_path = \
-        "Evolution\\config\\experiment_config\\exp001\\arena_config.yml"
+        "Evolution\\config\\experiment_config\\exp003\\arena_config.yml"
     sys.path.append(project_path)
     return os.path.join(project_path, config_path)
 

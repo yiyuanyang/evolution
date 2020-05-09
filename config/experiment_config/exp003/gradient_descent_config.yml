@@ -61,9 +61,9 @@ train_config: {
     kernel_sizes: [7,3,3,3,3]
   },
   learning_config: {
-    start_epoch: 1,
+    start_epoch: 125, # ** If restart, change this 
     max_epoch: 250,
-    use_existing_model: False,
+    use_existing_model: True, # ** If restart, change this
     adjust_learning_rate: True,
     learning_rate: 0.05,
     eval_only: False,
