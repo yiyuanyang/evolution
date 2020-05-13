@@ -90,14 +90,16 @@ class ModelFileManager(object):
         torch.save(candidate.model.state_dict(), self._model_dir(epoch))
         torch.save(candidate.optim.state_dict(), self._optim_dir(epoch))
 
-    def delete_model_optimizer(self, epoch):
+    def delete_model_optimizer(self):
         """Deleting models for this candidate to free up space
 
         Arguments:
             epoch {int or string} -- model to be deleted, * for all models
         """
-        os.system("rm " + os.path.join(self.model_save_dir, "model_{epoch}.pt").format(epoch=epoch))
-        os.system("rm " + os.path.join(self.model_save_dir, "optim_{epoch}.pt").format(epoch=epoch))
+        all_files = os.listdir(self.model_save_dir)
+        for each_file in all_files:
+            if "model" in each_file or "optim" in each_file:
+                os.remove(os.path.join(self.model_save_dir, each_file))
 
     def save_snapshot(self, candidate):
         config = candidate.config()

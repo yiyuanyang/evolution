@@ -1,6 +1,6 @@
 # Basic Info
 basic_config: {
-  experiment_name: "exp003_arena",
+  experiment_name: "exp003_arena_resnet_18_random_non_mutate",
   experiment_performer: "yiyuanyang",
   experiment_date: "2020-05-06",
 }
@@ -28,6 +28,8 @@ data_config: {
   },
 
   augmentation_config: {
+    example_save_dir: "",
+    num_examples: 50,
     ColorJitter: {
       brightness: 0.5,
       contrast: 0.3,
@@ -48,7 +50,8 @@ data_config: {
       translate: [0.1,0.1],
       scale: null,
       shear: null
-    }
+    },
+    Normalize: True,
   }
 
 }
@@ -57,7 +60,7 @@ data_config: {
 # Training
 train_config: {
   model_config: {
-    model_type: "resnet10",
+    model_type: "resnet18",
     in_channels: 3,
     image_size: 32,
     num_classes: 10,
@@ -65,12 +68,12 @@ train_config: {
   },
 
   evolution_config: {
-    start_epoch: 41, ## ** If Pause and Restart, Modify This
+    start_epoch: 81, ## ** If Pause and Restart, Modify This
     max_rounds: 50,
     epoch_per_round: 10,
     num_models: 20,
     use_existing_model: True, ## ** If Pause and Restart, Modify This
-    cur_model_id: 33, ## ** If Pause and Restart, Modify This
+    cur_model_id: 42, ## ** If Pause and Restart, Modify This
     elimination_rate: 0.2,
     max_round_per_model: 12, # This is in rounds
     age_variation: 4,
@@ -78,8 +81,8 @@ train_config: {
     shield_variation: 5,
     breed_probability: 0.75,
     random_seed: 10,
-    policy: "average",
-    mutate: True,
+    policy: "random",
+    mutate: False,
     max_weight_mutation: 0.00005,
     max_weight_mutation_decay: 0.98,
     downward_acceptance: 4 # ** Only consider to breed with next six models with equal probability

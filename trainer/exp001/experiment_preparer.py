@@ -28,6 +28,11 @@ class ExperimentPreparer(object):
                 save_config["save_dir"],
                 basic_config["experiment_name"]
             )
+        if "augmentation_config" in data_config.keys():
+            data_config["augmentation_config"]["example_save_dir"] = os.path.join(
+                save_config["save_dir"],
+                "image_processing_examples"
+            )
         save_config["model_save_dir"] = \
             os.path.join(
                 save_config["save_dir"],

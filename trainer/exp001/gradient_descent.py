@@ -35,12 +35,12 @@ class Trainer(object):
             config=self.experiment_preparer.get_each_config())
 
     def load_data(self):
-        augmentation_configs = self.data_config["augmentation_configs"]
+        augmentation_config = self.data_config["augmentation_config"]
         data_loader_params = self.data_config["data_loader_params"]
 
         train_dataset = CIFAR10Dataset(
             data_dir_list=self.data_config["train_data"],
-            augmentation_config=augmentation_configs)
+            augmentation_config=augmentation_config)
         eval_dataset = CIFAR10Dataset(
             data_dir_list=self.data_config["eval_data"],
             augmentation_config=None)
@@ -123,8 +123,8 @@ class Trainer(object):
                     self.data_config["data_loader_params"]["batch_size"]))
 
             # Calculations
-            cur_data, ground_truth = cur_data.to(self.device).type(
-                torch.float32), ground_truth.to(self.device)
+            cur_data, ground_truth = \
+                cur_data.to(self.device).type(torch.float32), ground_truth.to(self.device)
             prediction = self.model(cur_data)
             loss_func = nn.CrossEntropyLoss()
             loss = loss_func(prediction, ground_truth)

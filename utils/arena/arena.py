@@ -156,7 +156,7 @@ class Arena(object):
             return
         for arena_id, candidate in new_candidates.items():
             candidate.enter_arena(arena_id, self.am.epoch(), new_model=False)
-            self.model_candidates[arena_id].mfm.delete_model_optimizer(epoch="*")
+            self.model_candidates[arena_id].mfm.delete_model_optimizer()
             del self.model_candidates[arena_id]
             self.model_candidates[arena_id] = candidate
 
