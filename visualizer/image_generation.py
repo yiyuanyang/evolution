@@ -1,6 +1,8 @@
 """
-    In this file, we use gradient descent on images
+    Content:In this file, we use gradient descent on images
     and observe what the netowrk generates
+    Author: Yiyuan Yang
+    Date: May 13th 2020
 """
 
 import torch
