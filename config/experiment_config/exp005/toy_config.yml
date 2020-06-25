@@ -9,9 +9,6 @@ basic_config: {
 # Data Loading
 data_config: {
   path_to_labels_dir: "C:\\Users\\yangy\\Documents\\ComputerVision\\Projects\\code\\projects\\Evolution\\data\\quickdraw", 
-  # ** in_channels: 1, experiment preparer should detect these fields later on
-  # ** image_size: 28, 
-  # ** num_classes: 15,
   data_loader_params: {
     shuffle: True,
     num_workers: 8,
@@ -24,10 +21,12 @@ data_config: {
 train_config: {
   model_config: {
     model_type: "resnet18",
-    # ** in_channels: 1,
-    # ** image_size: 128,
     num_classes: 14,
-    kernel_sizes: [7,3,3,3,3]
+    kernel_sizes: [7,3,3,3,3],
+    layer_save_config: {
+      layer_save_dir: "",
+      epochs_per_save: 10
+    }
   },
   learning_config: {
     start_epoch: 1, # ** If restart, change this 

@@ -23,23 +23,24 @@ class ToyShapeDataset(Dataset):
         self.data = []
         for _, row in path_to_label.iterrows():
             path = row['path']
+            file_name = path.split("\\")[-1].split(".")[0]
             pil_im = Image.open(path)
             pil_im = pil_im.resize((self.im_size, self.im_size))
             label = row['label']
-            self.data.append([pil_im, label])
+            self.data.append([pil_im, label, file_name])
 
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, idx):
-        pil_im, label = self.data[idx]
+        pil_im, label, file_name = self.data[idx]
         if self.augmentation:
             pil_im = self.simple_augment(pil_im)
         im = np.array(pil_im).astype(np.float32).reshape(
             (1, self.im_size, self.im_size))
         norm_im = self.normalize_image(im)
         inv_norm_im = self.invert_image(norm_im)
-        return [inv_norm_im, label]
+        return [inv_norm_im, label, file_name]
 
     def normalize_image(self, im):
         """

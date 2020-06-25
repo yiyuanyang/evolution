@@ -46,10 +46,10 @@ class ExperimentPreparer(object):
 
     def load_config(self, config):
         self.config = config
-        self.basic_config, \
-            self.data_config, \
-            self.train_config, \
-            self.save_config = config
+        self.basic_config = config["basic_config"]
+        self.data_config = config["data_config"]
+        self.train_config = config["train_config"]
+        self.save_config = config["save_config"]
 
     def create_dir(self, directory):
         if not os.path.exists(directory):
@@ -86,7 +86,7 @@ class ExperimentPreparer(object):
             self.data_config["path_to_labels_dir"],
             "test_path_to_labels.csv")
         encodings = pd.read_csv(os.path.join(
-            self.data_config["path_to_labels_dir"], 
+            self.data_config["path_to_labels_dir"],
             "label_to_encoding.csv"))
         encoding_dict = {}
         for _, row in encodings.iterrows():
@@ -107,6 +107,12 @@ class ExperimentPreparer(object):
                 self.save_config["save_dir"],
                 "image_processing_examples"
             )
+
+    def process_train_config(self):
+        if "layer_save_config" in self.train_config["model_config"].keys():
+            layer_save_dir = os.path.join(self.save_config["save_dir"], "cnn_snapshots")
+            self.train_config["model_config"]["layer_save_config"]["layer_save_dir"] = \
+                layer_save_dir
 
     def process_save_config(self):
         self.save_config["save_dir"] = \

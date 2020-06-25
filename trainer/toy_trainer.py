@@ -39,15 +39,15 @@ class Trainer(object):
         data_loader_params = self.data_config["data_loader_params"]
 
         train_dataset = ToyShapeDataset(
-            file_dir=self.data_config["train_csv"],
+            file_dir=self.data_config["train_path_to_labels"],
             augmentation=True,
             im_size=self.data_config["image_size"])
         eval_dataset = ToyShapeDataset(
-            file_dir=self.data_config["eval_csv"],
+            file_dir=self.data_config["eval_path_to_labels"],
             augmentation=True,
             im_size=self.data_config["image_size"])
         test_dataset = ToyShapeDataset(
-            file_dir=self.data_config["eval_csv"],
+            file_dir=self.data_config["test_path_to_labels"],
             augmentation=False,
             im_size=self.data_config["image_size"])
 
@@ -113,7 +113,8 @@ class Trainer(object):
         self.logger.set_phase(epoch, phase)
 
         all_prediction, all_ground_truth, all_loss = [], [], []
-        for batch_index, (cur_data, ground_truth) in enumerate(self.data_loaders[phase]):
+        for batch_index, (cur_data, ground_truth, file_names) in \
+            enumerate(self.data_loaders[phase]):
             # Some Logging data to see everything is correct
             if batch_index == 0 and phase != 2:
                 self.logger.log_data(batch_index=batch_index,
@@ -127,7 +128,7 @@ class Trainer(object):
             # Calculations
             cur_data, ground_truth = \
                 cur_data.to(self.device).type(torch.float32), ground_truth.to(self.device)
-            prediction = self.model(cur_data)
+            prediction = self.model(cur_data, epoch, file_names)
             loss_func = nn.CrossEntropyLoss()
             loss = loss_func(prediction, ground_truth)
             self.optim.zero_grad()
