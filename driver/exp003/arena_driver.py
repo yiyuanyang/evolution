@@ -25,7 +25,7 @@ def run():
 def main():
     run()
     config_path = set_up_project()
-    from Evolution.trainer.exp001.arena_trainer import Trainer
+    from Evolution.trainer.arena_trainer import Trainer
     trainer = Trainer(config_path)
     trainer.start_experiment()
 

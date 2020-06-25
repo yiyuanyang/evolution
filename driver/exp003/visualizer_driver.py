@@ -22,11 +22,11 @@ config = {
     },
     "starting_iteration": 0,
     "use_existing_picture": False,
-    "max_iterations": 5000,
-    "iterations_per_save": 200,
+    "max_iterations": 1000,
+    "iterations_per_save": 10,
     "learning_rate": 0.1,
     "regularizer": 0.25,
-    "image_shape": [3, 32, 32],
+    "image_shape": [3, 256, 256],
     "image_class": 1,
     "save_dir": "E:\\saved_experiments\\exp003\\" +
                 "exp003_arena_resnet_18_image_generation\\generated_images"

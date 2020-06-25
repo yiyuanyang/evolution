@@ -20,8 +20,8 @@ def run():
 def main():
     run()
     config_path = set_up_project()
-    from Evolution.train.exp001.experiment_preparer import ExperimentPreparer
-    from Evolution.train.exp001.gradient_descent import Trainer
+    from Evolution.trainer.experiment_preparer import ExperimentPreparer
+    from Evolution.trainer.CIFAR_10_trainer import Trainer
 
     Exp001Preparer = ExperimentPreparer(config_path)
     trainer = Trainer(Exp001Preparer)

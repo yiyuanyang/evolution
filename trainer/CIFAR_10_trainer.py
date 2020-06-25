@@ -73,7 +73,7 @@ class Trainer(object):
         for epoch in tqdm(
                 range(learning_config["start_epoch"],
                       learning_config["max_epoch"])):
-            if learning_config["adjust_learning_rate"]:
+            if learning_config["adjust_lr"]:
                 self.adjust_learning_rate(epoch)
             cur_model_name = "epoch_{}.pt".format(int(epoch))
             cur_model_path = os.path.join(self.save_config["model_save_dir"],

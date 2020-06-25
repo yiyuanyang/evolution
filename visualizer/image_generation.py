@@ -8,7 +8,7 @@
 import torch
 from torch import nn
 from Evolution.model.models.resnet.resnet import gen_model
-from torchvision.models.resnet import resnet34
+from torchvision import models
 import numpy as np
 import os
 from PIL import Image
@@ -28,20 +28,18 @@ class ImageGenerator(object):
             os.system("mkdir " + self.save_dir)
 
     def init_model_optimizer(self, image):
-        self.model = gen_model(self.model_config).to("cuda")
-        self.model.load_state_dict(torch.load(self.model_dir))
-        self.optim = torch.optim.Adam(
-            [image.requires_grad_()],
-            lr=self.initial_learning_rate,
-            betas=(0.9, 0.999))
+        #self.model = gen_model(self.model_config).to("cuda")
+        #self.model.load_state_dict(torch.load(self.model_dir))
+        self.model = models.resnet34(pretrained=True).to("cuda")
+        self.optim = torch.optim.LBFGS([image.requires_grad_()])
         for param in self.model.parameters():
             param.requires_grad = False
 
-    def init_noise_image(self):
+    def init_noise_tensor(self):
         gray_image = torch.ones(self.image_shape).to("cuda") * 128
         noise = torch.randn(self.image_shape).to("cuda")
         gray_image = (gray_image + noise)
-        gray_image = (gray_image - gray_image.min()) / (gray_image.max() - gray_image.min())
+        #gray_image = (gray_image - gray_image.min()) / (gray_image.max() - gray_image.min())
         return gray_image
 
     def init_trained_image(self, class_type, iteration):
@@ -51,14 +49,15 @@ class ImageGenerator(object):
             "iter_{iteration}.jpg".format(iteration=iteration))
         image = np.asarray(Image.open(self.image_save_dir)).astype(np.float32)
         image = np.moveaxis(self.normalize_image(image), 2, 0)
-        return tensor_image
+        return image
 
     def init_training_tensor(self, iteration):
         arrays = []
         for i in range(10):
             arrays.append(self.init_trained_image(i, iteration))
         numpy_batch = np.stack(arrays)
-        tensor_image = torch.tensor(numpy_batch).to("cuda")        
+        tensor_image = torch.tensor(numpy_batch).to("cuda")
+        return tensor_image
 
     def regularize_image(self, image):
         return image - self.regularizer * np.absolute(
@@ -96,16 +95,24 @@ class ImageGenerator(object):
             self.save_image(pil_image, i, iteration)
 
     def iteration(self, image, label, iteration):
-        prediction = self.model(image)
-        losses = []
-        for i in range(10):
-            losses.append(-prediction[i][i] + 
-            self.regularizer * (image **2).mean())
-        loss = torch.mean(torch.stack(losses))
-        loss.backward()
-        self.optim.step()
         if iteration % self.iterations_per_save == 0:
             self.save_tensor(image, iteration)
+            print("Regularizer Term {term}".format(
+                term=self.regularizer * (image ** 2).mean())
+            )
+        def closure():
+            self.optim.zero_grad()
+            prediction = self.model(image)
+            losses = []
+            for i in range(10):
+                losses.append(
+                    -prediction[i][i] + self.regularizer * (image ** 2).mean())
+            loss = torch.mean(torch.stack(losses))
+            if loss.requires_grad:
+                loss.backward()
+            print(loss)
+            return loss
+        self.optim.step(closure)
 
     def reverse_training(self):
         starting_iteration = self.config["starting_iteration"]
@@ -114,7 +121,7 @@ class ImageGenerator(object):
         if self.config["use_existing_picture"]:
             image = self.init_training_tensor(starting_iteration)
         else:
-            image = self.init_noise_image()
+            image = self.init_noise_tensor()
         self.init_model_optimizer(image)
         self.model.eval()
         for iteration in range(starting_iteration, max_iterations):

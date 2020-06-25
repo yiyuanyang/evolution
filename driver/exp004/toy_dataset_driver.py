@@ -11,7 +11,7 @@ import torch
 
 def set_up_project():
     project_path = "C:\\Users\\yangy\\Documents\\ComputerVision\\Projects\\code\\projects"
-    config_path = "Evolution\\config\\experiment_config\\exp003\\gradient_descent_config.yml"
+    config_path = "Evolution\\config\\experiment_config\\exp004\\toy_config.yml"
     sys.path.append(project_path)
     return os.path.join(project_path, config_path)
 
@@ -24,7 +24,7 @@ def main():
     run()
     config_path = set_up_project()
     from Evolution.trainer.experiment_preparer import ExperimentPreparer
-    from Evolution.trainer.CIFAR_10_trainer import Trainer
+    from Evolution.trainer.toy_trainer import Trainer
 
     Exp001Preparer = ExperimentPreparer(config_path)
     trainer = Trainer(Exp001Preparer)

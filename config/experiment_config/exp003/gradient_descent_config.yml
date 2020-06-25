@@ -1,6 +1,6 @@
 # Basic Info
 basic_config: {
-  experiment_name: "exp003_gd_resnet_18_4",
+  experiment_name: "exp003_gd_resnet_18_without_lr_adjustment",
   experiment_performer: "yiyuanyang",
   experiment_date: "2020-05-11",
 }
@@ -67,10 +67,9 @@ train_config: {
     start_epoch: 1, # ** If restart, change this 
     max_epoch: 250,
     use_existing_model: False, # ** If restart, change this
-    adjust_learning_rate: True,
     learning_rate: 0.05,
     eval_only: False,
-    adjust_lr: True,
+    adjust_lr: False,
     gamma: 0.98,
     loss: "cross_entropy",
     gradient_clip: False,

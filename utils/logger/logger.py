@@ -10,6 +10,7 @@ from Evolution.model.model_components.resnet_components.residual_block \
     import BasicBlock, Bottleneck
 from scipy import special as sp
 from sklearn import metrics
+import math
 import pandas as pd
 import numpy as np
 import yaml
@@ -27,8 +28,9 @@ class Logger(object):
         self.phase = 3
         self.print_to_console = print_to_console
 
-        assert os.path.exists(logger_save_dir), \
-            "FATAL: Save Directory Does not Exist"
+        if not os.path.exists(logger_save_dir):
+            print("Logger Directory Does Not Exist, Creating One...")
+            os.mkdir(logger_save_dir)
 
         self.logger_save_dir = [
             os.path.join(logger_save_dir, "train.log"),
@@ -427,10 +429,10 @@ class Logger(object):
                    new_model_id=new_model_id))
 
     def round_to_4_decimal(self, stats):
-        return [round(item, 4) for item in stats]
+        return [round(item, 4) if not math.isnan(item) else 0 for item in stats]
 
     def round_to_2_decimal(self, stats):
-        return [round(item, 2) for item in stats]
+        return [round(item, 2) if not math.isnan(item) else 0 for item in stats]
 
     def log_elimination(self, survived, eliminated, value_dict, reason):
         survived = {arena_id: value_dict[arena_id] for arena_id in survived}
