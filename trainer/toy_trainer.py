@@ -9,7 +9,7 @@ import torch
 import torch.nn as nn
 from torch.utils import data
 from tqdm import tqdm
-from Evolution.model.models.resnet.resnet import gen_model
+from Evolution.model.models.resnet.resnet_save import gen_model
 from Evolution.data.shape.toy_dataset.toy_dataset import ToyShapeDataset
 from Evolution.utils.logger.logger import Logger
 

@@ -9,6 +9,7 @@ import torch.nn as nn
 import numpy as np
 import os
 from Evolution.model.model_components.resnet_components.residual_block import BasicBlock, Bottleneck
+import copy
 
 
 model_types = ['resnet10', 'resnet18', 'resnet34', 'resnet50']
@@ -186,12 +187,12 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def save_x(self, x, epoch, layer_name, file_names):
-        save_x = x.cpu().numpy()
-        save_x = save_x.reshape((save_x[0], -1))
+        save_x = copy.deepcopy(x.data.cpu().numpy())
+        save_x = save_x.reshape((save_x.shape[0], -1))
         cur_layer_save_dir = os.path.join(self.layer_save_dir, layer_name)
         if not os.path.exists(cur_layer_save_dir):
             os.mkdir(cur_layer_save_dir)
-        cur_epoch_save_dir = os.path.join(self.cur_layer_save_dir, str(epoch))
+        cur_epoch_save_dir = os.path.join(cur_layer_save_dir, str(epoch))
         if not os.path.exists(cur_epoch_save_dir):
             os.mkdir(cur_epoch_save_dir)
         for index, name in enumerate(file_names):
@@ -222,7 +223,7 @@ class ResNet(nn.Module):
         return x
 
     def forward(self, x, epoch=None, file_names=None):
-        return self._forward_impl(x, epoch=epoch, file_names=None)
+        return self._forward_impl(x, epoch=epoch, file_names=file_names)
 
 
 def resnet10(

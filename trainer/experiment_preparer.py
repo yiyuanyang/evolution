@@ -26,6 +26,7 @@ class ExperimentPreparer(object):
     def process_config(self):
         self.process_data_config()
         self.process_save_config()
+        self.process_train_config()
         self.logger = Logger(logger_save_dir=self.save_config["save_dir"],
                              dump_frequency=self.save_config["dump_frequency"])
 
@@ -92,6 +93,7 @@ class ExperimentPreparer(object):
         for _, row in encodings.iterrows():
             encoding_dict[row["class"]] = row["code"]
         self.data_config["encodings"] = encoding_dict
+        self.train_config["model_config"]["num_classes"] = max(encoding_dict.values()) + 1
 
     def get_each_config(self):
         return self.basic_config, self.data_config, self.train_config, self.save_config
