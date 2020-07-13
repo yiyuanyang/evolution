@@ -8,7 +8,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 import os
-from Evolution.model.model_components.resnet_components.residual_block import BasicBlock, Bottleneck
+from yyycode.model.model_components.resnet_components.residual_block import BasicBlock, Bottleneck
 import copy
 
 
@@ -27,7 +27,10 @@ def gen_model(
     in_channels = config["in_channels"]
     image_size = config["image_size"]
     num_classes = config["num_classes"]
-    layer_save_config = config["layer_save_config"]
+    if "layer_save_config" in config.keys():
+        layer_save_config = config["layer_save_config"]
+    else:
+        layer_save_config = None
     if model_type == 'resnet10':
         return resnet10(
             in_channels,
@@ -187,6 +190,8 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def save_x(self, x, epoch, layer_name, file_names):
+        if epoch % self.layer_save_config["epochs_per_save"] != 0:
+            return
         save_x = copy.deepcopy(x.data.cpu().numpy())
         save_x = save_x.reshape((save_x.shape[0], -1))
         cur_layer_save_dir = os.path.join(self.layer_save_dir, layer_name)
@@ -219,6 +224,8 @@ class ResNet(nn.Module):
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
         x = self.fc(x)
+        if self.layer_save_config:
+            self.save_x(x, epoch, "output", file_names)
 
         return x
 

@@ -1,0 +1,65 @@
+# Basic Info
+basic_config: {
+  experiment_name: "basic_shapes", # ** Name of the experiment
+  user: "farranger", # ** Your Name
+  date: "2020-07-12", # ** N/A 
+}
+
+
+# Data Loading
+data_config: {
+  trial_name: "first_try",
+  data_loader_params: { # ** This will be passed into DataLoader Directly
+    shuffle: True,
+    num_workers: 8,
+    batch_size: 20
+  },
+  grayscale: false, # ** Are images grayscale
+  augmentation_config: { # ** Augmentation Settings
+    num_examples: 200,
+    RandomGrayscale: {
+      probability: 0.2
+    },
+    RandomHorizontalFlip: {
+      probability: 0.3
+    },
+    RandomVerticalFlip: {
+      probability: 0.2
+    },
+    RandomAffine: {
+      degrees: 10,
+      translate: [0.03,0.03],
+      scale: null,
+      shear: null
+    },
+    Normalize: True,
+  },
+}
+
+# Training
+train_config: {
+  model_config: { # ** What kind of model?
+    model_type: "resnet18",
+    kernel_sizes: [7,3,3,3,3],
+  },
+  learning_config: {
+    start_epoch: 0, # ** If restart, change this 
+    max_epoch: 100,
+    use_existing_model: False, # ** If restart, change this
+    learning_rate: 0.01,
+    eval_only: False,
+    adjust_lr: False,
+    loss: "cross_entropy",
+    gradient_clip: False,
+    gradient_clip_value: 1
+  }
+}
+
+
+# Logger and model saving
+save_config: {
+  use_logger: True,
+  dump_frequency: 1,
+  log_frequency: 200,
+  display_frequency: 1000
+}

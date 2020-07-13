@@ -6,7 +6,7 @@
 
 import torch
 import torch.nn as nn
-from Evolution.model.model_components.resnet_components.residual_block import BasicBlock, Bottleneck
+from yyycode.model.model_components.resnet_components.residual_block import BasicBlock, Bottleneck
 
 
 model_types = ['resnet10', 'resnet18', 'resnet34', 'resnet50']

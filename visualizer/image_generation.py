@@ -7,7 +7,7 @@
 
 import torch
 from torch import nn
-from Evolution.model.models.resnet.resnet import gen_model
+from yyycode.model.models.resnet.resnet import gen_model
 from torchvision import models
 import numpy as np
 import os

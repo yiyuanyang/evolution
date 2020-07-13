@@ -7,11 +7,13 @@
 
 import yaml
 import os
-from Evolution.utils.logger.logger import Logger
+from yyycode.utils.logger.logger import Logger
 from PIL import Image
 import pandas as pd
 import numpy as np
 
+PATH_TO_LABEL_DIR = "..\\..\\config\\data_config"
+SAVE_DIR = "E:\\saved_experiments\\"
 
 class ExperimentPreparer(object):
     def __init__(
@@ -77,6 +79,21 @@ class ExperimentPreparer(object):
             self.config["save_config"] = save_config
 
     def process_path_to_labels(self):
+        self.data_config["path_to_labels_dir"] = \
+            os.path.join(
+                PATH_TO_LABEL_DIR, 
+                self.basic_config["experiment_name"],
+                self.data_config["trial_name"])
+        self.save_config["save_dir"] = \
+            os.path.join(
+                SAVE_DIR, 
+                self.basic_config["experiment_name"],
+                self.data_config["trial_name"])
+        if not os.path.exists(
+            os.path.join(
+                SAVE_DIR, 
+                self.basic_config["experiment_name"])):
+            os.mkdir(os.path.join(SAVE_DIR, self.basic_config["experiment_name"]))
         self.data_config["train_path_to_labels"] = os.path.join(
             self.data_config["path_to_labels_dir"],
             "train_path_to_labels.csv")
@@ -117,11 +134,16 @@ class ExperimentPreparer(object):
                 layer_save_dir
 
     def process_save_config(self):
-        self.save_config["save_dir"] = \
+        self.data_config["save_dir"] = \
             os.path.join(
-                self.save_config["save_dir"],
-                self.basic_config["experiment_name"]
-            )
+                SAVE_DIR, 
+                self.basic_config["experiment_name"],
+                self.data_config["trial_name"])
+        if not os.path.exists(
+            os.path.join(
+                SAVE_DIR, 
+                self.basic_config["experiment_name"])):
+            os.mkdir(os.path.join(SAVE_DIR, self.basic_config["experiment_name"]))
         self.save_config["model_save_dir"] = \
             os.path.join(
                 self.save_config["save_dir"],

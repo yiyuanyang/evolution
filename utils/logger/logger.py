@@ -5,8 +5,8 @@
 """
 
 
-from Evolution.utils.weights import weight_stats
-from Evolution.model.model_components.resnet_components.residual_block \
+from yyycode.utils.weights import weight_stats
+from yyycode.model.model_components.resnet_components.residual_block \
     import BasicBlock, Bottleneck
 from scipy import special as sp
 from sklearn import metrics

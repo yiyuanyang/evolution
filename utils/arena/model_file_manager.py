@@ -5,7 +5,7 @@
     Date: May 2nd 2020
 """
 
-from Evolution.model.models.resnet.arena_resnet import gen_model
+from yyycode.model.models.resnet.arena_resnet import gen_model
 import pickle
 import torch
 import os

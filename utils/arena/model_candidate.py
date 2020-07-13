@@ -5,9 +5,9 @@
 """
 
 
-from Evolution.utils.arena.model_config_manager import ModelConfigManager
-from Evolution.utils.arena.model_file_manager import ModelFileManager
-from Evolution.utils.logger.logger import Logger
+from yyycode.utils.arena.model_config_manager import ModelConfigManager
+from yyycode.utils.arena.model_file_manager import ModelFileManager
+from yyycode.utils.logger.logger import Logger
 from torch import nn
 import torch
 import math

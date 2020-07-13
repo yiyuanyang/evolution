@@ -4,11 +4,11 @@
     Date: April 29th 2020
 """
 
-from Evolution.utils.factory.model_candidate_factory \
+from yyycode.utils.factory.model_candidate_factory \
     import ModelCandidateFactory
-from Evolution.utils.logger.logger import Logger
-from Evolution.utils.arena.arena_manager import ArenaManager
-from Evolution.utils.lineage.lineage_tree import Lineage
+from yyycode.utils.logger.logger import Logger
+from yyycode.utils.arena.arena_manager import ArenaManager
+from yyycode.utils.lineage.lineage_tree import Lineage
 import numpy as np
 
 

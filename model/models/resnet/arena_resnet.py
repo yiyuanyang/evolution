@@ -6,10 +6,10 @@
 
 import torch
 import torch.nn as nn
-from Evolution.model.model_components.resnet_components.residual_block \
+from yyycode.model.model_components.resnet_components.residual_block \
     import BasicBlock, Bottleneck
-from Evolution.utils.breed import model_breeding
-from Evolution.utils.weights import weight_stats
+from yyycode.utils.breed import model_breeding
+from yyycode.utils.weights import weight_stats
 
 model_types = ['resnet10', 'resnet18', 'resnet34', 'resnet50']
 
