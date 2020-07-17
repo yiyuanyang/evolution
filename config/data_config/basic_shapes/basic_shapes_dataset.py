@@ -34,7 +34,7 @@ class BasicShapesDataset(Dataset):
             pil_im = Image.open(path)
             label = row['label']
             pil_im = pil_im.resize((self.im_size, self.im_size))
-            self.data.append([np.array(pil_im), label])
+            self.data.append([pil_im, label])
             if index % 1000 == 0:
                 print("Read Image {cur_id}/{total}".format(cur_id=index, total=path_to_label.shape[0]))
 
@@ -47,11 +47,5 @@ class BasicShapesDataset(Dataset):
             image = self.image_augmentor.augment_image(image)
         np_image = np.asarray(image)
         if not self.grayscale:
-            return np.moveaxis(np_image, 2, 0)
-        return (image, label)
-
-    def normalize_image(self, im):
-        """
-            Normalize The Image Between -1 and 1
-        """
-        return ((im - np.min(im)) / (np.max(im) - np.min(im))) - 1
+            np_image = np.moveaxis(np_image, 2, 0)
+        return (np_image, label)

@@ -35,13 +35,19 @@ class Trainer(object):
             config=self.experiment_preparer.get_each_config())
 
     def load_data(self):
+        augment = self.data_config["augment"]
         augmentation_config = self.data_config["augmentation_config"]
         data_loader_params = self.data_config["data_loader_params"]
-
-        train_dataset = BasicShapesDataset(
-            file_dir=self.data_config["train_path_to_labels"],
-            augmentation_config=augmentation_config,
-            im_size=self.data_config["image_size"])
+        if augment:
+            train_dataset = BasicShapesDataset(
+                file_dir=self.data_config["train_path_to_labels"],
+                augmentation_config=augmentation_config,
+                im_size=self.data_config["image_size"])
+        else:
+            train_dataset = BasicShapesDataset(
+                file_dir=self.data_config["train_path_to_labels"],
+                augmentation_config=None,
+                im_size=self.data_config["image_size"])
         eval_dataset = BasicShapesDataset(
             file_dir=self.data_config["eval_path_to_labels"],
             augmentation_config=None,
@@ -112,8 +118,7 @@ class Trainer(object):
                                      label=ground_truth)
             if batch_index % 20 == 0:
                 print("Batch: " + str(batch_index) + "/" + str(
-                    len(self.data_loaders[phase]) //
-                    self.data_config["data_loader_params"]["batch_size"]))
+                    len(self.data_loaders[phase])))
 
             # Calculations
             cur_data, ground_truth = \

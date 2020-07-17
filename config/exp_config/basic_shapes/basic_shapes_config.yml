@@ -8,13 +8,14 @@ basic_config: {
 
 # Data Loading
 data_config: {
-  trial_name: "first_try",
+  trial_name: "test",
   data_loader_params: { # ** This will be passed into DataLoader Directly
     shuffle: True,
     num_workers: 8,
-    batch_size: 20
+    batch_size: 100
   },
   grayscale: false, # ** Are images grayscale
+  augment: false,
   augmentation_config: { # ** Augmentation Settings
     num_examples: 200,
     RandomGrayscale: {

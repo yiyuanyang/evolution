@@ -1,0 +1,46 @@
+# Basic Info
+basic_config: {
+  exp_name: "", # ** Name of the experiment
+  user: "", # ** Your Name
+  date: "", # ** N/A 
+}
+
+
+# Data Loading
+data_config: {
+  image_dimension: [], # ** Example [3, 200, 200], Denoting Size of the Image
+  grayscale: false,
+  gaussian_mean: 0,
+  gaussian_stdev: 1
+}
+
+
+# Training
+train_config: {
+  model_path: "",
+  epoch: 0, # ** Which Epoch To Use
+  num_classes: 9,
+  images_per_class: 1,
+  model_config: { # ** What kind of model?
+    model_type: "resnet18",
+    in_channels: 3,
+    image_size: 200,
+    num_classes: 9,
+    kernel_sizes: [7,3,3,3,3],
+  },
+  learning_config: {
+    regularizer: 0.1,
+    learning_rate: 0.01,
+    num_iterations: 100,
+    loss: "cross_entropy",
+    gradient_clip: True,
+    gradient_clip_value: 1
+  }
+}
+
+
+# Logger and model saving
+save_config: {
+  iter_per_save: 10,
+  image_save_dir: "", # ** Where should the exp results be stored? 
+}

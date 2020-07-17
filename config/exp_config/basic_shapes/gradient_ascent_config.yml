@@ -1,0 +1,59 @@
+# Basic Info
+basic_config: {
+  exp_name: "generate_shapes_2", # ** Name of the experiment
+  user: "farranger", # ** Your Name
+  date: "2020-07-14", # ** N/A 
+}
+
+
+# Data Loading
+data_config: {
+  image_dimension: [3, 200, 200], # ** Example [3, 200, 200], Denoting Size of the Image
+  grayscale: false,
+  gaussian_mean: 0,
+  gaussian_stdev: 1,
+  encoding: {
+    0: "triangle",
+    1: "star",
+    2: "octagon",
+    3: "hexagon",
+    4: "heptagon",
+    5: "square",
+    6: "circle",
+    7: "pentagon",
+    8: "Nonagon"
+  }
+}
+
+
+# Training
+train_config: {
+  model_path: "E:\\saved_experiments\\basic_shapes\\test\\models",
+  epoch: 45, # ** Which Epoch To Use
+  num_classes: 9,
+  model_config: { # ** What kind of model?
+    model_type: "resnet18",
+    in_channels: 3,
+    image_size: 200,
+    num_classes: 9,
+    kernel_sizes: [7,3,3,3,3],
+  },
+  learning_config: {
+    learning_rate: 6,
+    blur_freq: 10,
+    blur_rad: 0.8,
+    gamma: 0.001,
+    num_iterations: 1000,
+    loss: "cross_entropy",
+    clipping: True,
+    clip_value: 0.1
+  }
+}
+
+
+# Logger and model saving
+save_config: {
+  iter_per_save: 10,
+  iter_per_display: 20,
+  image_save_dir: "E:\\saved_experiments\\basic_shapes\\generate_shapes_7", # ** Where should the exp results be stored? 
+}

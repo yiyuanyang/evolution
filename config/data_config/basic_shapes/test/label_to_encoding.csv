@@ -1,0 +1,10 @@
+class,code
+Triangle,0
+Star,1
+Octagon,2
+Hexagon,3
+Heptagon,4
+Square,5
+Circle,6
+Pentagon,7
+Nonagon,8
