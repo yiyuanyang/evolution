@@ -58,13 +58,22 @@ class GradientAscentGenerator(object):
         self.learning_rate = self.learning_config["learning_rate"]
         # Start training
         for current_class in range(self.train_config["num_classes"]):
-            cur_class = torch.from_numpy(
-                np.array([current_class])).long().to(self.device)
+            #Cross Entropy Loss
+            #cur_class = torch.from_numpy(
+            #    np.array([current_class])).long().to(self.device)
+            #MSE Loss
+            ground_truth = torch.from_numpy(
+                np.array(
+                    [[0 if current_class != i else 1 for i in range(self.train_config["num_classes"])]]
+                )).float().to(self.device)
             print("Generating for {current_class}".format(current_class=current_class))
             self.generated_image = np.uint8(np.random.uniform(0, 255, (200, 200, 3)))
             self.learning_rate = self.learning_config["learning_rate"]
             for cur_iter in range(0, self.learning_config["num_iterations"]):
-                prediction, pd_confidence, gt_confidence = self.iteration(cur_iter, cur_class)
+                prediction, pd_confidence, gt_confidence = self.iteration(
+                    cur_iter, 
+                    ground_truth, 
+                    current_class)
                 if cur_iter % self.save_config["iter_per_save"] == 0:
                     print("Cur Iter: {cur_iter}".format(cur_iter=cur_iter))
                     self.generated_image = self.recreate_image(self.processed_image.cpu())
@@ -84,14 +93,15 @@ class GradientAscentGenerator(object):
         returns:
             recreated_im (numpy arr): Recreated image in array
         """
-        reverse_mean = [-0.485, -0.456, -0.406]
-        reverse_std = [1/0.229, 1/0.224, 1/0.225]
+        #reverse_mean = [-0.485, -0.456, -0.406]
+        #reverse_std = [1/0.229, 1/0.224, 1/0.225]
         recreated_im = copy.copy(im_as_var.data.numpy()[0])
-        for c in range(3):
-            recreated_im[c] /= reverse_std[c]
-            recreated_im[c] -= reverse_mean[c]
-        recreated_im[recreated_im > 1] = 1
-        recreated_im[recreated_im < 0] = 0
+        #for c in range(3):
+        #    recreated_im[c] /= reverse_std[c]
+        #    recreated_im[c] -= reverse_mean[c]
+        #recreated_im[recreated_im > 1] = 1
+        #recreated_im[recreated_im < 0] = 0
+        recreated_im = (recreated_im - recreated_im.min()) / (recreated_im.max() - recreated_im.min())
         recreated_im = np.round(recreated_im * 255)
         recreated_im = np.uint8(recreated_im).transpose(1, 2, 0)
         return recreated_im
@@ -99,7 +109,8 @@ class GradientAscentGenerator(object):
     def iteration(
         self,
         cur_iter,
-        ground_truth
+        ground_truth,
+        current_class
     ):
         self.model.eval()
         for param in self.model.parameters():
@@ -125,16 +136,21 @@ class GradientAscentGenerator(object):
             torch.nn.utils.clip_grad_norm(
                 self.processed_image,
                 self.learning_config["clip_value"])
-        loss_func = nn.CrossEntropyLoss()
+        #loss_func = nn.CrossEntropyLoss()
+        loss_func = nn.MSELoss()
         optimizer = torch.optim.LBFGS(
-            [self.processed_image], 
+            [self.processed_image],
             lr=self.learning_rate)
+        prediction_value = np.array([])
         def closure():
             optimizer.zero_grad()
             prediction = self.model(self.processed_image)
             loss = loss_func(prediction, ground_truth)
             loss.backward()
             return loss
+
+        prediction = self.model(self.processed_image)
+        loss = loss_func(prediction, ground_truth)
         optimizer.step(closure)
 
         # Calculations
@@ -146,15 +162,14 @@ class GradientAscentGenerator(object):
         prediction_value_normalized = [value - pred_value_min for value in prediction_value[0]]
         pred_value_sum = np.sum(prediction_value_normalized)
         pred_confidence = [prob/pred_value_sum for prob in prediction_value_normalized]
-        ground_truth = ground_truth.data.cpu().numpy().tolist()
         loss = loss.data.cpu().numpy().tolist()
         prediction = [pred.index(max(pred)) for pred in prediction_value][0]
         pd_confidence = int(round(pred_confidence[prediction] * 100))
-        gt_confidence = int(round(pred_confidence[ground_truth[0]] * 100))
+        gt_confidence = int(round(pred_confidence[current_class] * 100))
         if cur_iter % self.save_config["iter_per_display"] == 0:
             print("pred:{prediction}, gt:{ground_truth}, L:{loss}, lr:{lr}, pd_conf:{pd_confidence}, gt_conf:{gt_confidence}".format(
                 prediction=prediction,
-                ground_truth=ground_truth[0],
+                ground_truth=current_class,
                 loss=round(loss, 3),
                 lr=round(self.learning_rate, 5),
                 pd_confidence=pd_confidence,
